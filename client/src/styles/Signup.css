@@ -1,0 +1,105 @@
+.signup_container {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.signup_form {
+  display: flex;
+  flex-direction: column;
+  row-gap: 20px;
+  min-width: 280px;
+  width: 90%;
+  max-width: 350px;
+}
+
+.form_label {
+}
+
+.auth_form_input {
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 15px;
+  border: 1px solid #e5e5e5;
+  outline: none;
+  margin-top: 5px;
+}
+
+.auth_form_input:hover {
+  border: 1px solid #2a9dd5;
+}
+
+.auth_form_input:focus {
+  border: 2px solid #2a9dd5;
+}
+
+.singup_button {
+  width: 120px;
+  padding: 10px 25px;
+  border-radius: 10px;
+  background-color: #2a9dd5;
+  border: none;
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  margin: 20px auto;
+}
+
+.singup_button:hover {
+  background-color: #31a8e4;
+}
+
+.from_label_title {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.auth_form_input-wrapper {
+  position: relative;
+}
+
+.auth_form_input-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-40%);
+  color: #31a8e4;
+  cursor: pointer;
+}
+
+.auth_input_error_message {
+  color: rgb(221, 0, 0);
+  height: 10px;
+  font-size: 14px;
+  margin-top: 2px;
+  transition: 0.2s ease-in;
+}
+
+.auth_input_error_message-active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.auth_input_error_message-inactive {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.signin_link {
+  color: #000;
+  text-align: center;
+}
+
+.signin_link_span {
+  color: #2a9dd5;
+  cursor: pointer;
+}
+
+.auth_title {
+  font-size: 30px;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
