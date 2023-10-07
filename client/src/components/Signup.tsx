@@ -1,6 +1,8 @@
 import { useState, Dispatch, SetStateAction } from "react";
 import "../styles/Signup.css";
-import { NavLink } from "react-router-dom";
+import PrimaryButton from "../UIcomponents/PrimaryButton";
+import { NavLink, useNavigate } from "react-router-dom";
+import $api from "../api";
 
 function Signup() {
   const [login, setLogin] = useState("");
@@ -9,6 +11,7 @@ function Signup() {
   const [isPwt, setIsPwt] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   function handleLoginChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLogin(e.target.value);
@@ -38,7 +41,12 @@ function Signup() {
     }, 2000);
   }
 
-  function handleSignUpClick() {
+  async function handleSignUpClick() {
+    const candidate = await $api.get(`/check-candidate?email=${login}`, {
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
     if (login.length === 0) {
       showErrorMessage("Field must be filled!", setLoginErrorMessage);
     } else if (password.length < 5) {
@@ -50,8 +58,12 @@ function Signup() {
       showErrorMessage("Email must be valid!", setLoginErrorMessage);
     } else if (repeatedPassword !== password) {
       showErrorMessage("Passwords doesn't match!", setPasswordErrorMessage);
+    } else if (candidate.data) {
+      showErrorMessage("Email already in use!", setLoginErrorMessage);
     } else {
-      console.log("Succesfully signed up!");
+      localStorage.setItem("password", password);
+      localStorage.setItem("email", login);
+      navigate("/signup-customization");
     }
   }
 
@@ -139,9 +151,7 @@ function Signup() {
             Sign in then.
           </NavLink>
         </div>
-        <button className="singup_button" onClick={handleSignUpClick}>
-          Sign up
-        </button>
+        <PrimaryButton onClick={handleSignUpClick}>Next</PrimaryButton>
       </div>
     </div>
   );

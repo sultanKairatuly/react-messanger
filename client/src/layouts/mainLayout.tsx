@@ -1,16 +1,18 @@
-import Sidebar from '../components/Sidebar'
-import ChatContent from '../components/ChatContent'
-import '../styles/MainLayout.css'
+import Sidebar from "../components/Sidebar";
+import ChatContent from "../components/ChatContent";
+import "../styles/MainLayout.css";
+import { observer } from "mobx-react";
+import ProtectedRoute from "../components/ProtectedRoute";
 
-
-
-function MainLayout(){
+const MainLayout = observer(function MainLayout() {
     return (
-        <div className="main_layout">
-            <Sidebar />
-            <ChatContent />
-        </div>
-    )
-}
+    <ProtectedRoute>
+      <div className="main_layout">
+        <Sidebar />
+        <ChatContent />
+      </div>
+    </ProtectedRoute>
+  );
+});
 
-export default MainLayout
+export default MainLayout;

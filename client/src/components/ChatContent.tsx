@@ -1,11 +1,15 @@
-import '../styles/ChatContent.css'
+import "../styles/ChatContent.css";
+import { observer } from "mobx-react";
+import store from "../store/store";
 
-function ChatContent(){
-    return (
-        <div className="chat_content">
+const ChatContent = observer(function () {
+  return (
+    <div
+      className={(store.blured ? "chat_content-blurred" : "") + " chat_content "}
+      style={{ backgroundImage: `url(${store.chatWallpaperImage})` }}
+    >
+    </div>
+  );
+});
 
-        </div>
-    )
-}
-
-export default ChatContent
+export default ChatContent;
