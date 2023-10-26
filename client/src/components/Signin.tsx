@@ -1,6 +1,9 @@
 import { useState, Dispatch, SetStateAction } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "../styles/Signup.css";
+import $api from "../api";
+import store from "../store/store";
+import { User, userPredicate } from "../types";
 
 function Signin() {
   const [login, setLogin] = useState("");
@@ -9,6 +12,7 @@ function Signin() {
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
+  const navigate = useNavigate();
   function handleLoginChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLogin(e.target.value);
   }
@@ -31,7 +35,7 @@ function Signin() {
     }, 2000);
   }
 
-  function handleSignUpClick() {
+  async function handleSignUpClick() {
     if (login.length === 0) {
       showErrorMessage("Field must be filled!", setLoginErrorMessage);
     } else if (password.length < 5) {
@@ -42,7 +46,31 @@ function Signin() {
     } else if (!login.match(/.+@(gmail.com)|(mail.ru)/gm)) {
       showErrorMessage("Email must be valid!", setLoginErrorMessage);
     } else {
-      console.log("Succesfully signed up!");
+      const { data } = await $api.post<
+        User | { type: "error"; message: string }
+      >("/login", {
+        user: {
+          email: login,
+          password,
+        },
+      });
+      console.log(data);
+      if (userPredicate(data)) {
+        store.setUser(data);
+        navigate("/");
+      } else {
+        const { message } = data;
+        switch (message) {
+          case "Not authorized":
+            showErrorMessage("Email is not authorized", setLoginErrorMessage);
+            break;
+          case "Credentials mismatch":
+            showErrorMessage("Credentials mismatch", setLoginErrorMessage);
+            break;
+          default:
+            showErrorMessage("Unexpected error", setLoginErrorMessage);
+        }
+      }
     }
   }
 

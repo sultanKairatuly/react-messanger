@@ -1,0 +1,81 @@
+.sidebar_search_container{
+
+}
+
+.sidebar_search{
+
+}
+
+.sidebar_group_search_container{
+
+}
+
+.sidebar_search_tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #b6b6b6;
+}
+
+
+
+.sidebar_search_tab{
+    flex: 1 1 0px;
+    text-align: center;
+    transition: 0.2s ease-in-out;
+    padding: 10px 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.sidebar_search_tab:hover {
+    background-color: #e5e5e5;
+
+}
+
+.sidebar_search_tab_title{
+    font-size: 20px;
+}
+
+.sidebar_chat_search_container{
+
+}
+
+.sidebar_search_tab_active{
+    color: #6caff1;
+    cursor: default;
+    border-bottom: 3px solid #6caff1;
+}
+
+
+.chat_search_item {
+    display: flex;
+    column-gap: 15px;
+    align-items: center;
+    transition: 0.2s ease-in-out;
+    border-radius: 15px;
+    padding: 15px 20px;
+    cursor: pointer;
+}
+
+.chat_search_item:hover {
+    background-color: #e5e5e5;
+    
+}
+
+.chat_search_avatar_wrapper {
+    border-radius: 50%;
+    overflow: hidden;
+    width: 80px;
+    height: 80px;
+}
+
+.chat_search_avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat_search_title {
+    font-size: 20px;
+    font-weight: 600;
+}

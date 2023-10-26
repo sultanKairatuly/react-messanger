@@ -1,0 +1,24 @@
+.search_messages{
+    height: 100vh;
+    width: 0%;
+    transition: 0.3s ease-in-out;
+    position: relative;
+    overflow: scroll;
+    max-width: 450px;
+    background-color: #fff;
+    border-left: 1px solid #dadce0;
+}
+
+.search_found_messages{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    row-gap: 10px;
+}
+
+.highjlited{
+    background-color: #cae3f7;
+    padding: 3px;
+    border-radius: 10px;
+}

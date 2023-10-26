@@ -1,0 +1,105 @@
+
+
+.settings_header{
+    display: flex;
+    align-items: center;
+    position: sticky;
+    justify-content: space-between;
+    border-bottom: 1px solid #e5e5e5;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    padding: 10px;
+    background-color: #fff;
+    width: 100%;
+    -webkit-box-shadow: 0px 2px 4px -3px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 2px 4px -3px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 2px 4px -3px rgba(0, 0, 0, 0.2);
+}
+
+.settings_header_head, .settings_header_tail{
+    display: flex;
+    column-gap: 10px;
+    align-items: center;
+}
+
+.settings_header-icon{
+    font-size: 25px;
+    color: gray    
+}
+
+.settings_header_button{
+    cursor: pointer;
+    background-color: #fff;
+    border: none;
+    padding: 10px;
+    width: 50px;
+    border-radius: 50%;
+    transition: 0.2s ease-in-out;
+}
+
+.settings_header_button:hover {
+    background-color: #e5e5e5;
+}
+
+.settings_header_title{
+    font-size: 27px;
+    font-weight: 600;
+}
+
+.page_header_dropdown_menu {
+    position: absolute;
+    right: 15px !important;
+    top: 70px;
+    background-color: #fffb;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    opacity: 0.9;
+    border-radius: 10px;
+    -webkit-box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 0px 8px 0px rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    transition: .2s ease-in-out;
+
+}
+
+.page_header_dropdown_menu_item{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 25px;
+}
+
+.sidebar_header_dropdown_menu_item:hover {
+    background-color: #e5e5e5;
+}
+
+.page_header_dropdown_menu_item-head{
+    display: flex;
+    column-gap: 15px;
+    align-items: center;
+}
+
+.page_header_dropdown_menu_item-title{
+    font-size: 20px;
+}
+
+.page_header_dropdown_menu_item-icon{
+    font-size: 23px;
+    color: #777;
+}
+
+.page_header_dropdown_menu-active{
+    transform: translate(0px, 0px);
+    visibility: visible;
+    opacity: 1;
+}
+
+
+.page_header_dropdown_menu-inactive {
+    transform: translate(5px, 10px);
+    visibility: hidden;
+    opacity: 0;
+}

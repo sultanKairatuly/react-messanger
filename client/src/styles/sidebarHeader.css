@@ -30,6 +30,7 @@
     overflow: hidden;
     background-color: gray;
     display: block;
+    transition: 0.2s ease-in-out;
 }
 
 .sidebar_header_search_container{
@@ -174,3 +175,27 @@
     visibility: hidden;
     opacity: 0;
 }
+
+
+.side_header_menu_back{
+    transform: rotate(360deg);
+}
+.side_header_menu_back .sidebar_header_menu_bar_one{
+    transform: scale(0.7) translateX(-10px) rotate(-45deg);
+}
+
+.side_header_menu_back  .sidebar_header_menu_bar_two {
+
+}
+
+.side_header_menu_back  .sidebar_header_menu_bar_three {
+    transform: scale(0.7) translateX(-10px) rotate(45deg);
+}
+
+.side_header_burger_menu {
+    position: absolute;
+    top: 80px;
+    left: 0;
+    width: 250px;
+}
+

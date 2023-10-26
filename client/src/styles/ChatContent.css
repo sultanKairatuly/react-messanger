@@ -1,18 +1,19 @@
 .chat_content{
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-    width: 100%;
-}
-
-.chat_content_image {
-    width: 100%;
     height: 100%;
-    object-fit: cover;
+    width: 100%;
+    overflow: hidden;
 }
 
 .chat_content-blurred{
-    filter: blur(13px);
-    -webkit-filter: blur(13px);
+    filter: blur(12px);
 }
+
+.chat_content_background{
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
 

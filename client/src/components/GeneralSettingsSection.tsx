@@ -23,7 +23,9 @@ const GeneralSettingsSection = observer(() => {
           min={12}
           max={19}
           value={store.messageSize}
-          onChange={(value) => (store.messageSize = Number(value))}
+          onChange={(value) => {
+            store.messageSize = Number(value);
+          }}
           step={1}
         />
         <SettingsOption option={option} />
@@ -50,6 +52,7 @@ const GeneralSettingsSection = observer(() => {
         <AppCheckbox
           handleClick={() => {
             store.timeFormat = 12;
+            localStorage.setItem("timeFormat", "12");
           }}
           title="12-hour"
           checked={store.timeFormat === 12}
@@ -57,6 +60,7 @@ const GeneralSettingsSection = observer(() => {
         <AppCheckbox
           handleClick={() => {
             store.timeFormat = 24;
+            localStorage.setItem("timeFormat", "24");
           }}
           title="24-hour"
           checked={store.timeFormat === 24}
@@ -67,6 +71,7 @@ const GeneralSettingsSection = observer(() => {
         <AppCheckbox
           handleClick={() => {
             store.sendMode = "ctrl";
+            localStorage.setItem("sendMode", "ctrl");
           }}
           title="Send With Ctrl + Enter"
           checked={store.sendMode === "ctrl"}
@@ -74,6 +79,7 @@ const GeneralSettingsSection = observer(() => {
         <AppCheckbox
           handleClick={() => {
             store.sendMode = "enter";
+            localStorage.setItem("sendMode", "enter");
           }}
           title="Send With Enter"
           checked={store.sendMode === "enter"}

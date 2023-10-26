@@ -1,26 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect, Dispatch, SetStateAction } from "react";
 import { v4 as uuidv4 } from "uuid";
 import "../styles/sidebarHeader.css";
 import store from "../store/store";
 import { observer } from "mobx-react";
+import { SidebarBurgerMenuItemType } from "../types";
+import SidebarBurgerMenu from "./SidebarBurgerMenu";
 
-type DropdownItemDefault = {
-  type: "default";
-  title: string;
-  icon: string;
-  action: (...args: never) => unknown;
-  id: string;
+// type DropdownItemDefault = {
+//   type: "default";
+//   title: string;
+//   icon: string;
+//   action: (...args: never) => unknown;
+//   id: string;
+// };
+
+// type DropdownItemCheckbox = Omit<DropdownItemDefault, "type"> & {
+//   type: "checkbox";
+//   checked: boolean;
+// };
+// type DropdownItem = DropdownItemDefault | DropdownItemCheckbox;
+type SidebarHeaderProps = {
+  setSidebarSearch: Dispatch<SetStateAction<boolean>>;
+  sidebarSearch: boolean;
+  searchQuery: string;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
 };
 
-type DropdownItemCheckbox = Omit<DropdownItemDefault, "type"> & {
-  type: "checkbox";
-  checked: boolean;
-};
-type DropdownItem = DropdownItemDefault | DropdownItemCheckbox;
-
-const SidebarHeader = observer(function SidebarHeader() {
-  document.addEventListener("click", onClickOutside);
-  const initialDropdownItems: DropdownItem[] = [
+const SidebarHeader = observer(function SidebarHeader({
+  setSidebarSearch,
+  sidebarSearch,
+  setSearchQuery,
+  searchQuery,
+}: SidebarHeaderProps) {
+  useEffect(() => {
+    function cleanup() {
+      document.removeEventListener("click", onClickOutside);
+    }
+    document.addEventListener("click", onClickOutside);
+    return cleanup;
+  }, []);
+  const initialDropdownItems: SidebarBurgerMenuItemType[] = [
     {
       title: "Settings",
       type: "default",
@@ -48,12 +67,11 @@ const SidebarHeader = observer(function SidebarHeader() {
       },
       icon: "fa-solid fa-moon",
       id: uuidv4(),
-      checked: false,
+      checked: store.theme === "dark",
     },
   ];
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeInput, setActiveInput] = useState(false);
-  const [dropdownItems, setDropdownItems] = useState(initialDropdownItems);
+  const dropdownItems = initialDropdownItems;
   const [dropdownMenu, setDropdownMenu] = useState(false);
   const searchIconDynamicClassName = activeInput
     ? "sidebar_header_search_icon-active"
@@ -65,7 +83,8 @@ const SidebarHeader = observer(function SidebarHeader() {
       target &&
       target instanceof HTMLElement &&
       !target.closest(".sidebar_header_dropdown_menu") &&
-      !target.closest(".sidebar_header_menu")
+      !target.closest(".sidebar_header_menu") &&
+      target.closest(".side_header_menu_back")
     ) {
       setDropdownMenu(false);
     }
@@ -73,6 +92,7 @@ const SidebarHeader = observer(function SidebarHeader() {
 
   function handleSearchMouseDown() {
     setActiveInput(true);
+    setSidebarSearch(true);
   }
 
   function handleSearchMouseUp() {
@@ -87,78 +107,28 @@ const SidebarHeader = observer(function SidebarHeader() {
     setSearchQuery("");
   }
 
-  function renderDropdownCheckbox(dropdownItem: DropdownItemCheckbox) {
-    const toggleDropdownCheckbox = () => {
-      const updatedDropdownItems = dropdownItems.map((item) => {
-        if (item.id === dropdownItem.id) {
-          if (item.type === "checkbox") {
-            return {
-              ...item,
-              checked: !item.checked,
-            };
-          }
-        }
-
-        return item;
-      });
-      setDropdownItems(updatedDropdownItems);
-    };
-
-    return (
-      <div className="dropdown_item_checkbox">
-        <div
-          className={
-            dropdownItem.checked
-              ? "dropdown_item_checkbox_circle checkbox_circle-unchecked"
-              : "dropdown_item_checkbox_circle checkbox_circle-checked"
-          }
-          onClick={toggleDropdownCheckbox}
-        ></div>
-      </div>
-    );
-  }
-
   return (
     <div className="sidebar_header">
-      {dropdownMenu}
       <div
-        className="sidebar_header_menu"
-        onClick={() => setDropdownMenu(!dropdownMenu)}
-      >
-        <div className="sidebar_header_menu_bar"></div>
-        <div className="sidebar_header_menu_bar"></div>
-        <div className="sidebar_header_menu_bar"></div>
-      </div>
-      {
-        <div
-          className={
-            (dropdownMenu
-              ? "sidebar_header_dropdown_menu-active"
-              : "sidebar_header_dropdown_menu-inactive") +
-            " sidebar_header_dropdown_menu"
+        className={
+          (sidebarSearch ? "side_header_menu_back" : "") +
+          " sidebar_header_menu"
+        }
+        onClick={() => {
+          const close = document.querySelector(".side_header_menu_back");
+          console.log(close);
+          if (!close) {
+            setDropdownMenu(!dropdownMenu);
+          } else {
+            setSidebarSearch(false);
           }
-        >
-          {dropdownItems.map((di) => (
-            <div
-              className="sidebar_header_dropdown_menu_item"
-              key={di.id}
-              onClick={di.action}
-            >
-              <div className="sidebar_header_dropdown_menu_item-head">
-                <i
-                  className={
-                    di.icon + " sidebar_header_dropdown_menu_item-icon"
-                  }
-                ></i>
-                <h2 className="sidebar_header_dropdown_menu_item-title">
-                  {di.title}
-                </h2>
-              </div>
-              {di.type === "checkbox" && renderDropdownCheckbox(di)}
-            </div>
-          ))}
-        </div>
-      }
+        }}
+      >
+        <div className="sidebar_header_menu_bar sidebar_header_menu_bar_one"></div>
+        <div className="sidebar_header_menu_bar sidebar_header_menu_bar_two"></div>
+        <div className="sidebar_header_menu_bar sidebar_header_menu_bar_three"></div>
+      </div>
+      <SidebarBurgerMenu isDropdown={dropdownMenu} items={dropdownItems} />
       <div className="sidebar_header_search_container">
         <i
           className={

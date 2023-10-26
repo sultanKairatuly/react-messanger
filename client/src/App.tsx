@@ -1,12 +1,13 @@
-import './App.css';
-import MainLayout from './layouts/mainLayout';
+import "./App.css";
+import MainLayout from "./layouts/mainLayout";
+import { observer } from "mobx-react";
 
-function App() {
+const App = observer(function App() {
   return (
     <>
-    <MainLayout />
+      <MainLayout />
     </>
-  )
-}
+  );
+});
 
-export default App
+export default App;

@@ -1,31 +1,59 @@
+import { useState } from "react";
 import { observer } from "mobx-react";
 import PageHeader from "./PageHeader";
 import "../styles/chatWallpaper.css";
 import store from "../store/store";
 import SettingsOptionsList from "./SettingsOptionsList";
-import { SettingsOptionType } from "../types";
+import { SettingsOptionType, userPredicate, User } from "../types";
 import AppRadio from "./AppRadio";
+import $api from "../api";
+import Loader from "./Loader";
 
-const backgrounds = [
-  "chat_bg1.jpeg",
-  "chat_bg2.jpeg",
-  "chat_bg3.jpeg",
-  "chat_bg4.jpeg",
-  "chat_bg5.jpeg",
-  "chat_bg6.jpeg",
-  "chat_bg7.jpeg",
-  "chat_bg8.jpeg",
-  "chat_bg9.jpeg",
-  "chat_bg10.jpeg",
-  "chat_bg11.jpeg",
-  "chat_bg12.jpeg",
-];
 const ChatWallpaper = observer(() => {
+  const [loader, setLoader] = useState(false);
+  const [loadingWallpaper, setLoadingWallpaper] = useState("");
   const options: SettingsOptionType[] = [
     {
       title: "Upload image",
       icon: "fa-solid fa-camera",
-      action() {},
+      async action() {
+        try {
+          if (userPredicate(store.user)) {
+            const user = store.user;
+            const inputFile = document.createElement("input");
+            inputFile.setAttribute("type", "file");
+            inputFile.setAttribute(
+              "accept",
+              "image/png, image/gif, image/jpeg"
+            );
+            inputFile.addEventListener("change", () => {
+              if (inputFile.files) {
+                setLoader(true);
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                  const updatedUser = await $api.post(
+                    `/update-user-wallpapers`,
+                    {
+                      wallpaper: e.target?.result || "",
+                      prevUser: user,
+                    }
+                  );
+                  if (userPredicate(updatedUser.data)) {
+                    store.setUser(updatedUser.data);
+                  }
+                  setLoader(false);
+                };
+                reader.readAsDataURL(inputFile.files[0]);
+              }
+            });
+            inputFile.click();
+          }
+        } catch (e) {
+          console.log("An error occured: ", e);
+        } finally {
+          setLoader(false);
+        }
+      },
     },
     {
       title: "Set a color",
@@ -35,10 +63,24 @@ const ChatWallpaper = observer(() => {
     {
       title: "Reset to default",
       icon: "fa-solid fa-star",
-      action() {
-        store.blured = true;
-        store.chatWallpaperImage = "chat_bg0.jpeg";
-        localStorage.setItem("chwp", store.chatWallpaperImage);
+      async action() {
+        try {
+          setLoader(true);
+          if (userPredicate(store.user)) {
+            const updatedUser = await $api.post<User>(`/update-user`, {
+              field: "activeChatWallpaper",
+              val: "chat_bg0.jpeg",
+              prevUser: store.user || {},
+            });
+            store.blured = true;
+            store.user = updatedUser.data;
+            localStorage.setItem("user", JSON.stringify(store.user));
+          }
+        } catch (e) {
+          console.log("Error occured: ", e);
+        } finally {
+          setLoader(false);
+        }
       },
     },
   ];
@@ -47,15 +89,27 @@ const ChatWallpaper = observer(() => {
     store.chatWallpaper = false;
   }
 
-  function handleBluredClick() {
+  function handleBluredChange() {
     store.blured = !store.blured;
   }
-
-  function handleChatWallpaperClick(imageUrl: string) {
-    store.chatWallpaperImage = imageUrl;
-    localStorage.setItem("chwp", imageUrl);
+  async function handleChatWallpaperClick(imageUrl: string) {
+    try {
+      setLoadingWallpaper(imageUrl);
+      if (store.user && "activeChatWallpaper" in store.user) {
+        const updatedUser = await $api.post<User>(`/update-user`, {
+          field: "activeChatWallpaper",
+          val: imageUrl,
+          prevUser: store.user || {},
+        });
+        console.log(updatedUser);
+        store.setUser(updatedUser.data);
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingWallpaper("");
+    }
   }
-
   return (
     <div className="chat_wallpaper_container">
       <PageHeader handleBackClick={handleBackClick} title="Chat Wallpaper" />
@@ -63,13 +117,14 @@ const ChatWallpaper = observer(() => {
         <SettingsOptionsList options={options} />
         <AppRadio
           title="Blurred"
-          clickHandler={handleBluredClick}
+          changeHandler={handleBluredChange}
           checked={store.blured}
           classNameRoot="chat_wallpaper_radio"
         />
       </div>
       <div className="chat_wallpaper_backgrounds">
-        {backgrounds.map((bg) => (
+        {loader && <Loader />}
+        {store.user?.chatWallpaper.map((bg) => (
           <div
             key={bg}
             className={
@@ -78,7 +133,11 @@ const ChatWallpaper = observer(() => {
                 : "") + " chat_wallpaper_background_wrapper"
             }
             onClick={() => handleChatWallpaperClick(bg)}
-          ></div>
+          >
+            {loadingWallpaper === bg}
+            {loadingWallpaper === bg && <Loader />}
+            <img className="chat_wallpaper_background_image" src={`/${bg}`} />
+          </div>
         ))}
       </div>
     </div>

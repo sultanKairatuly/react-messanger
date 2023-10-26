@@ -1,0 +1,74 @@
+.search_messages_header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    z-index: 10;
+}
+
+.search_messages_header_search_wrapper {
+    width: 100%;
+}
+
+.search_messages_header_search_input {
+    width: 90%;
+    margin: 0 auto;
+    border-radius: 20px;
+    padding: 10px 30px;
+    outline: none;
+    border: none;
+    background-color: #f4f4f5;
+    font-size: 18px;
+    border: 3px solid #f4f4f5;
+    display: block;
+}
+
+.search_messages_text{
+    font-size: 20px;
+    font-weight: 600;
+    
+}
+
+.search_messages_header_search_input::placeholder {
+    color: #8d8d8d;
+    font-size: 18px;
+    opacity: 1; /* Firefox */
+  }
+  
+.search_messages_header_search_input::-ms-input-placeholder { /* Edge 12 -18 */
+    color: #e5e5e5;
+    font-size: 20px;
+}
+
+.search_messages_header_date, .search_messages_header_close {
+    width: 50px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+    transition: 0.2s ease-in-out;
+}
+
+.search_messages_header_date i, .search_messages_header_close i {
+    color: #a0a0a0;
+    font-size: 23px;
+}
+
+.search_messages_header_date:hover, .search_messages_header_close:hover {
+    background-color: #e5e5e5;
+}
+
+.search_messages_header_search_input-active{
+    border: 3px solid #3390EC;
+    background-color: #fff;
+    
+}

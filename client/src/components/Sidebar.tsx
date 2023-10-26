@@ -6,7 +6,6 @@ import { observer } from "mobx-react";
 
 const Sidebar = observer(function Sidebar() {
   const allFalsy = !store.settings;
-  console.log(allFalsy);
   return (
     <div className="sidebar">
       {store.settings && <Settings />}

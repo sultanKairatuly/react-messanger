@@ -2,7 +2,7 @@ import { useState, Dispatch, SetStateAction } from "react";
 import "../styles/Signup.css";
 import "../styles/signupCustomization.css";
 import { NavLink, useNavigate } from "react-router-dom";
-import PrimaryButton from "../UIcomponents/PrimaryButton";
+import PrimaryButton from "./AppButton";
 import { User, userPredicate } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import $api from "../api";
@@ -39,7 +39,8 @@ function SignupCustomization() {
     } else {
       const password = localStorage.getItem("password");
       const email = localStorage.getItem("email");
-      if (email && password) {
+      const id = localStorage.getItem("id");
+      if (email && password && id) {
         const newUser: User & { password: string } = {
           password,
           email,
@@ -48,8 +49,10 @@ function SignupCustomization() {
           avatar,
           id: uuidv4(),
           chats: [],
+          userId: id,
           blockedContacts: [],
-          messages: [],
+          messages: {},
+          bio: "",
           chatWallpaper: [
             "chat_bg1.jpeg",
             "chat_bg2.jpeg",
@@ -64,18 +67,21 @@ function SignupCustomization() {
             "chat_bg11.jpeg",
             "chat_bg12.jpeg",
           ],
+          mutedContacts: [],
+          lastSeen: 0,
           activeChatWallpaper: "chat_bg0.jpeg",
         };
         try {
-          const response = await $api.post<User>("/registration", {
+          const response = await $api.post<string>("/registration", {
             user: newUser,
           });
-
-          if (userPredicate(response.data)) {
-            store.setUser(response.data);
-            localStorage.setItem("user", JSON.stringify(response.data));
+          const parsedUser = JSON.parse(response.data);
+          if (userPredicate(parsedUser)) {
+            store.setUser(parsedUser);
             if (response.status === 200 && response.statusText === "OK") {
               navigator("/");
+              localStorage.removeItem("email");
+              localStorage.removeItem("password");
             }
           }
         } catch (e) {
@@ -113,7 +119,11 @@ function SignupCustomization() {
               alt="avatar of your profile"
             />
           </div>
-          <PrimaryButton className="change_avatar" onClick={requestImageFile}>
+          <PrimaryButton
+            styles={{ margin: "10px auto" }}
+            className="change_avatar"
+            onClick={requestImageFile}
+          >
             Change
           </PrimaryButton>
         </label>

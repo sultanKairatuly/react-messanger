@@ -14,7 +14,7 @@
 .general_settings_section {
     display: flex;
     flex-direction: column;
-    height: 93%;
+    height: 93vh;
     column-gap: 20px;
     justify-content: space-between;
 }

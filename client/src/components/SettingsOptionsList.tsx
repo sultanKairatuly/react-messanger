@@ -9,7 +9,7 @@ function SettingsOptionsList({ options }: SettingsOptionsListType){
         <div className="settings_options">
             {
                 options.map((so) => (
-                <div key={so.title} >
+                <div key={so.title+so.icon} >
                     <SettingsOptions option={so} />
                 </div>)
                 )

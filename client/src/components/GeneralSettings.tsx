@@ -15,7 +15,7 @@ const GeneralSettings = observer(() => {
           <GeneralSettingsSection />
         </div>
       )}
-      <ChatWallpaper />
+      {store.chatWallpaper && <ChatWallpaper />}
     </div>
   );
 });

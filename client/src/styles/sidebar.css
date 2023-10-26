@@ -4,4 +4,11 @@
     position: relative;
     max-width: 800px;
     overflow-x: hidden;
+    border-right: 2px solid #c0c0c0;
+    filter: none;
+    background-color: #fff;
+
+}
+.sidebar_main_container{
+    padding: 25px;
 }

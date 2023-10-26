@@ -3,24 +3,25 @@ import "../styles/ui.css";
 type AppRadioPropsType = {
   title: string;
   checked: boolean;
-  clickHandler: () => void;
+  changeHandler: () => void;
   classNameRoot: string;
 };
 function AppRadio({
   title,
   checked,
-  clickHandler,
+  changeHandler,
   classNameRoot,
 }: AppRadioPropsType) {
   return (
     <div
+      onClick={changeHandler}
       className={classNameRoot + " app_radio_container"}
-      onClick={clickHandler}
     >
       <input
         className="app_radio_radio"
-        defaultChecked={checked}
+        checked={checked}
         type="checkbox"
+        onChange={changeHandler}
       />
       <h2 className="app_radio_title">{title}</h2>
     </div>
