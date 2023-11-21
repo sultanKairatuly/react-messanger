@@ -263,18 +263,74 @@ input[type="range"]::-webkit-slider-thumb {
 
 .app_modal {
     position: absolute;
-    width: 100vw;
-    height: 100vh;
     overflow: hidden;
+    top: 0;
+    left: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #00000083;
+    width: 100vw;
+    z-index: 100;
+    height: 100vh;
+    background-color: #000000b7;
+    transition: 0.1s ease-in-out;
 }
 
 
 .app_modal_content {
     background-color: #fff;
-    border-radius: 20px;
-    padding: 20px;
+    position: relative;
+    border-radius: 15px;
+    padding: 10px;
+    transition: 0.2s ease-in-out;
+    transform-origin: center;
+}
+
+.close_modal {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    padding: 10px;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.close_modal:hover {
+    background-color: #dddddd;
+    
+}
+
+.close_modal_icon{
+    font-size: 18px;
+    color: #575757;
+
+}
+
+.app_modal-active{
+    opacity: 1;
+    visibility: visible;
+}
+
+.app_modal-inactive{
+    opacity: 0;
+    visibility: hidden;
+}
+
+.app_modal-active .app_modal_content{
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+.app_modal-inactive .app_modal_content{
+    transform: scale(0.2);
+    opacity: 0;
+    visibility: hidden;
 }

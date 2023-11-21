@@ -5,6 +5,7 @@ import store from "../store/store";
 import { observer } from "mobx-react";
 import { SidebarBurgerMenuItemType } from "../types";
 import SidebarBurgerMenu from "./SidebarBurgerMenu";
+import { useNavigate } from "react-router-dom";
 
 // type DropdownItemDefault = {
 //   type: "default";
@@ -32,6 +33,8 @@ const SidebarHeader = observer(function SidebarHeader({
   setSearchQuery,
   searchQuery,
 }: SidebarHeaderProps) {
+  
+  const navigate = useNavigate()
   useEffect(() => {
     function cleanup() {
       document.removeEventListener("click", onClickOutside);
@@ -53,21 +56,19 @@ const SidebarHeader = observer(function SidebarHeader({
       title: "Saved Messages",
       type: "default",
       action() {
-        store.savedMessages = true;
+        navigate(`/a/${(store.user?.userId + 'savedMessages').split('').sort().join('')}?type=group`)
       },
-      icon: "fa-solid fa-bookmark",
+      icon: "fa-regular fa-bookmark",
       id: uuidv4(),
     },
     {
-      title: "Night Mode",
-      type: "checkbox",
+      title: "Create Groupe",
+      type: "default",
       action() {
-        const newTheme = store.theme === "light" ? "dark" : "light";
-        store.theme = newTheme;
+        store.newGroup = true;
       },
-      icon: "fa-solid fa-moon",
+      icon: "fa-solid fa-users",
       id: uuidv4(),
-      checked: store.theme === "dark",
     },
   ];
   const [activeInput, setActiveInput] = useState(false);

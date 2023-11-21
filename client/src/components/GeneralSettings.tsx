@@ -1,9 +1,9 @@
 import { observer } from "mobx-react";
 import "../styles/general.css";
-import GeneralSettingsHeader from "./GeneralSettingsHeader";
 import GeneralSettingsSection from "./GeneralSettingsSection";
 import ChatWallpaper from "./ChatWallpaper";
 import store from "../store/store";
+import PageHeader from "./PageHeader";
 
 const GeneralSettings = observer(() => {
   const allFalsy = !store.chatWallpaper;
@@ -11,7 +11,10 @@ const GeneralSettings = observer(() => {
     <div className="general_settings_container">
       {allFalsy && (
         <div>
-          <GeneralSettingsHeader />
+          <PageHeader
+            title="General Settings"
+            handleBackClick={() => (store.generalSettings = false)}
+          />
           <GeneralSettingsSection />
         </div>
       )}

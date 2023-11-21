@@ -3,16 +3,16 @@ export type User = {
     name: string,
     avatar: string,
     id: string,
-    messages: Record<string, Message[]>,
     blockedContacts: string[],
     mutedContacts: string[],
-    lastSeen: number | Date,
+    lastSeen: number,
     chats: string[]
     email: string,
     chatWallpaper: string[],
     activeChatWallpaper: string,
     userId: string,
-    bio: string
+    bio: string,
+    randomColor: string
 }
 
 
@@ -21,29 +21,115 @@ export type EmittingData = {
     user1: string;
     user2: string;
     message: Message;
-  };
+    type: "group" | "contact",
+    socketId: string
+};
 export type Role = "admin" | "member";
-
+export type Member = {
+  role: Role,
+  userId: string
+}
 export type GroupChat = {
     type: 'group',
-    members: (User & { role: Role })[],
+    members: Member[],
     avatar: string,
     bio: string,
     name: string,
-    messages: Message[],
     id: string,
-    chatId: string
+    chatId: string,
+    randomColor: string
 }
-
+export type ReplyMessage = (Omit<TextMessage, 'type'> | Omit<ImageMessage, 'type'>) & { replyMessage:  TextMessage | Omit<ImageMessage, 'text' | 'imageUrl'> , type: 'reply' }
 export type MessageStatus = "pending" | "received" | "read"
 export type Chat = GroupChat | User
-export type Message = {
-    author: User,
-    text: string,
-    createdAt: number,
-    images: [],
-    id: string,
-    status: MessageStatus
+export type MessageType = 'text' | 'image' | 'system' | 'video'
+export type Message = TextMessage | SystemMessage | ImageMessage | ReplyMessage
+export type TextMessage = {
+  author: User,
+  text: string,
+  createdAt: number,
+  id: string,
+  status: MessageStatus,
+  type: 'text'
+}
+export type SystemMessage = {
+  text: string,
+  id: string,
+  type: 'system'
+  createdAt: number
+}
+
+
+export type MessageQueryText = {
+  type: 'text'
+}
+export type MessageQueryImage = {
+  type: "image"; imageUrl: string; text: string
+}
+export type MessageQueryReply = {
+  type: 'reply',
+  replyingMessage: TextMessage | Omit<ImageMessage, "text" | "imageUrl">
+} & ({
+  dataType: 'text'
+} | { dataType: 'image', imageUrl: string, text: string})
+export type MessageQuery = | MessageQueryText | MessageQueryImage | MessageQueryReply
+export type ImageMessage = Omit<TextMessage, 'type'> & { type: 'image', text: string, imageUrl: string }
+
+export function textMessagePredicate(value: unknown): value is TextMessage {
+    return (
+      typeof value === "object" &&
+      value != null &&
+      "author" in value &&
+      "text" in value &&
+      "createdAt" in value &&
+      "id" in value &&
+      "status" in value && 
+      "type" in value &&
+      value.type === 'text'
+  )
+}
+
+export function systemMessagePredicate(value: unknown): value is SystemMessage {
+  return (
+    typeof value === "object" &&
+    value != null &&
+    "text" in value &&
+    "createdAt" in value &&
+    "id" in value &&
+    "type" in value &&
+    value.type === 'system'
+)
+}
+
+
+export function imageMessagePredicate(value: unknown): value is ImageMessage {
+  return (
+    typeof value === "object" &&
+    value != null &&
+    "author" in value &&
+    "text" in value &&
+    "createdAt" in value &&
+    "id" in value &&
+    "status" in value && 
+    "type" in value &&
+    "imageUrl" in value && 
+    value.type === 'image'
+)
+}
+
+export function replyMessagePredicate(value: unknown): value is ReplyMessage {
+  return (
+    typeof value === "object" &&
+    value != null &&
+    "author" in value &&
+    "text" in value &&
+    "createdAt" in value &&
+    "id" in value &&
+    "status" in value && 
+    "type" in value &&
+    "replyMessage" in value && 
+    value.type === 'reply'
+  )
 }
 
 export function groupChatPredicate(value: unknown): value is GroupChat {
@@ -54,7 +140,6 @@ export function groupChatPredicate(value: unknown): value is GroupChat {
       "name" in value &&
       "avatar" in value &&
       "id" in value &&
-      "messages" in value && 
       "members" in value &&
       "bio" in value 
   )
@@ -69,7 +154,6 @@ export function userPredicate(value: unknown): value is User {
       "name" in value &&
       "avatar" in value &&
       "id" in value &&
-      "messages" in value &&
       "blockedContacts" in value &&
       "chats" in value && 
       "activeChatWallpaper" in value && 
@@ -78,6 +162,11 @@ export function userPredicate(value: unknown): value is User {
       "chatWallpaper" in value
     );
 }
+
+export function notSystemMessagePredicate(value: unknown): value is Exclude<Message, SystemMessage> {
+  return !systemMessagePredicate(value)
+}
+
 export type GrayMenuType = 'default' | 'range' | 'checkbox'
 export type GrayMenuItemType = {
     title: string,
@@ -98,3 +187,4 @@ export function chatPredicate(value: unknown): value is Chat{
     description?: string,
     action: () => void
 }
+

@@ -3,10 +3,20 @@ import {
   useMemo,
   SetStateAction,
   useEffect,
-  useRef,
   useState,
+  useCallback,
+  useContext,
 } from "react";
-import { Message } from "../types";
+import {
+  Chat,
+  Message,
+  SystemMessage,
+  GrayMenuItemType,
+  textMessagePredicate,
+  imageMessagePredicate,
+  replyMessagePredicate,
+  ReplyMessage,
+} from "../types";
 import { observer } from "mobx-react";
 import $api from "../api";
 import { socket } from "../socket";
@@ -14,6 +24,13 @@ import { useParams } from "react-router-dom";
 import ForwardMessage from "./ForwardMessage";
 import ChatPageMessage from "./ChatPageMessage";
 import { formatTimeDate } from "../utils";
+import { hasDifference } from "../utils";
+import { createPortal } from "react-dom";
+import SearchMessages from "./SearchMessages";
+import store from "../store/store";
+import { v4 as uuidv4 } from "uuid";
+import { ChatPageContext } from "./ChatPage";
+import GrayMenu from "./GrayMenu";
 
 const keys = { 37: 1, 38: 1, 39: 1, 40: 1 };
 
@@ -27,20 +44,6 @@ function preventDefaultForScrollKeys(e: KeyboardEvent) {
     return false;
   }
 }
-
-const hasDifference = (
-  messageOne: Message | undefined,
-  messageTwo: Message | undefined
-): boolean => {
-  if (!messageOne || !messageTwo) return true;
-  const dateOne = messageOne.createdAt;
-  const dateTwo = messageTwo.createdAt;
-  const days = new Date(dateOne).getDay() !== new Date(dateTwo).getDay();
-  const months = new Date(dateOne).getMonth() !== new Date(dateTwo).getMonth();
-  const years =
-    new Date(dateOne).getFullYear() !== new Date(dateTwo).getFullYear();
-  return days || years || months ? true : false;
-};
 
 let supportsPassive = false;
 window.addEventListener(
@@ -78,12 +81,28 @@ function enableScroll() {
   window.removeEventListener("keydown", preventDefaultForScrollKeys, false);
 }
 
+type ChatPageMessagesProps = {
+  type: "contact" | "group";
+  to: string;
+  isSearchMessages: boolean;
+  messageText: string;
+  setSelectedMessages: Dispatch<
+    SetStateAction<Exclude<Message, SystemMessage>[]>
+  >;
+  isSelectedMessages: boolean;
+  selectedMessages: Exclude<Message, SystemMessage>[];
+  chat: Chat;
+  containerRef: HTMLDivElement | null;
+  setReplyMessage: Dispatch<
+    SetStateAction<ReplyMessage["replyMessage"] | null>
+  >;
+};
 function groupMessages(messages: Message[]) {
   const d: Message[][] = [];
   let stack = [];
   let i = 0;
   let counter = 0;
-  while (i < messages.length) {
+  while (i < messages?.length || 0) {
     const cirteria = hasDifference(messages[i], messages[i - 1]);
     if (cirteria) {
       counter++;
@@ -104,37 +123,24 @@ function groupMessages(messages: Message[]) {
   return d;
 }
 
-type ChatPageMessagesProps = {
-  type: "contact" | "group";
-  to: string;
-  messages: Message[];
-  setMessages: Dispatch<SetStateAction<Message[]>>;
-  messageText: string;
-  setSelectedMessages: Dispatch<SetStateAction<Message[]>>;
-  isSelectedMessages: boolean;
-  selectedMessages: Message[];
-};
-
 const ChatPageMessages = observer(function ChatPageMessages({
-  type,
   to,
-  messages,
-  setMessages,
   setSelectedMessages,
   isSelectedMessages,
   selectedMessages,
+  chat,
+  isSearchMessages,
+  containerRef,
+  setReplyMessage,
 }: ChatPageMessagesProps) {
   const { chatId } = useParams();
-
   const [contextMenu, setContextMenu] = useState<string>("");
+
   const [contextPosition, setContexPosition] = useState({ x: 0, y: 0 });
-  const container = useRef<HTMLDivElement | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const groupedMessages = useMemo(() => {
     return groupMessages(messages);
   }, [messages]);
-  useEffect(() => {
-    console.log(`contextMenu!: ${contextMenu}`);
-  }, [contextMenu]);
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target;
@@ -151,79 +157,247 @@ const ChatPageMessages = observer(function ChatPageMessages({
       document.removeEventListener("click", onClickOutside);
     };
   }, []);
+  const context = useContext(ChatPageContext);
+  const renderMessageContextMenu = useCallback(
+    (message: Message) => {
+      if (message.type === "system") return;
+      const commonContextMenuItems: GrayMenuItemType[] = [
+        {
+          title: "Reply",
+          icon: "fa-solid fa-reply",
+          id: uuidv4(),
+          action(message) {
+            if (
+              textMessagePredicate(message) ||
+              imageMessagePredicate(message)
+            ) {
+              setReplyMessage(message);
+            } else if (replyMessagePredicate(message)) {
+              setReplyMessage(message.replyMessage);
+            }
+            setContextMenu("");
+            enableScroll();
+          },
+        },
+        {
+          title: "Forward",
+          icon: "fa-solid fa-share",
+          id: uuidv4(),
+          action(message) {
+            context.setIsForwardMessage(true);
+            message && context.setActiveMessages([message]);
+            setContextMenu("");
+            enableScroll();
+          },
+        },
+        {
+          title: "Select",
+          icon: "fa-solid fa-circle-check",
+          id: uuidv4(),
+          action(message) {
+            setContextMenu("");
+            textMessagePredicate(message) &&
+              setSelectedMessages((msgs) => [...msgs, message]);
+            enableScroll();
+          },
+        },
+        {
+          title: "Copy Text",
+          icon: "fa-solid fa-clone",
+          id: uuidv4(),
+          action(message) {
+            navigator.clipboard.writeText(message?.text || "").then(() => {
+              store.setNotificationMessage("Text is copied!");
+            });
+            setContextMenu("");
+            enableScroll();
+          },
+        },
+      ];
+      const personalContextMenuItems: GrayMenuItemType[] = [
+        {
+          title: "Delete",
+          icon: "fa-solid fa-trash",
+          id: uuidv4(),
+          async action(message) {
+            setMessages((messages) =>
+              messages.filter((m) => m.id !== message?.id)
+            );
+            store.setNotificationMessage("Message was deleted!");
+            await $api.post(
+              `/delete-message?to=${to}&messageId=${message?.id}&user1=${store.user?.userId}&user2=${chatId}`
+            );
+            setContextMenu("");
+            enableScroll();
+          },
+        },
+      ];
+      if (message.author.userId === store.user?.userId) {
+        return (
+          <div
+            className={
+              (contextMenu === message.id
+                ? "context_menu_wrapper_active"
+                : "") + " context_menu_wrapper"
+            }
+            style={{
+              top: contextPosition.y,
+              transform: `translateX(${contextPosition.x - 300}px)`,
+            }}
+          >
+            <GrayMenu
+              isMenu={contextMenu === message.id}
+              message={message}
+              items={[...commonContextMenuItems, ...personalContextMenuItems]}
+            />
+          </div>
+        );
+      } else {
+        return (
+          <div
+            className={"context_menu_wrapper"}
+            style={{
+              top: contextPosition.y,
+              transform: `translateX(${contextPosition.x - 300}px)`,
+            }}
+          >
+            <GrayMenu
+              isMenu={contextMenu === message.id}
+              message={message}
+              items={commonContextMenuItems}
+            />
+          </div>
+        );
+      }
+    },
+    [contextMenu]
+  );
 
   useEffect(() => {
-    socket.on("update-messages", async () => {
-      console.log("update-messages event!");
-      const { data } = await $api(`/messages?chatId=${to}`);
-      setMessages(() => data);
-      localStorage.setItem(to, JSON.stringify(data));
+    socket.on("update-messages", async ({ data, id }) => {
+      const equal =
+        JSON.stringify(messages).split("").sort().join() ===
+        JSON.stringify(data).split("").sort().join();
+      if (data && to === id && !equal) {
+        setMessages(data);
+      }
+    });
+
+    socket.on("notify", async (data) => {
+      let notification: Notification | null = null;
+      function sendNotification() {
+        // Check if there is an existing notification
+        if (notification) {
+          notification.close();
+          // Notification is already open, do nothing
+          return;
+        }
+        // Request permission if not granted
+        if (Notification.permission !== "granted") {
+          Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+              createNotification();
+            }
+          });
+        } else {
+          // Permission already granted
+          createNotification();
+        }
+      }
+
+      function createNotification() {
+        // Create and show the notification
+        notification = new Notification(data.chat.name, {
+          body: data.text,
+        });
+
+        // You can add additional logic or event listeners here if needed
+      }
+      if (store.webNotifications && data) {
+        sendNotification();
+      }
     });
 
     () => {
       socket.off("update-messages");
+      socket.off("notify");
     };
-  }, [to]);
+  }, []);
 
   useEffect(() => {
     async function fetchMessages() {
       const { data } = await $api(`/messages?chatId=${to}`);
+      console.log(messages);
       setMessages(data);
-      localStorage.setItem(to, JSON.stringify(messages));
     }
     fetchMessages();
-  }, [to]);
+  }, [chatId, chat]);
 
   return (
     <>
       <ForwardMessage />
-      {type === "contact" ? (
-        <div
-          className="chat_page_messages"
-          ref={container}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <div className="chat_page_messages_content">
-            {groupedMessages.map((msgsArr) => {
-              return (
+      {containerRef &&
+        createPortal(
+          <SearchMessages
+            messages={messages}
+            chat={chat}
+            style={{
+              width: isSearchMessages ? "70%" : "0%",
+            }}
+          />,
+          containerRef as Element
+        )}
+      <div
+        className="chat_page_messages"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <div className="chat_page_messages_content">
+          {groupedMessages.map((msgsArr) => {
+            return (
+              <div
+                className="group_messages"
+                key={new Date(msgsArr[0]?.createdAt)
+                  .toLocaleString()
+                  .match(/[A-Za-z0-9/.]*,/gi)?.[0]
+                  ?.replace(",", "")}
+              >
                 <div
-                  className="group_messages"
-                  key={new Date(msgsArr[0]?.createdAt).toLocaleString()}
+                  data-date={new Date(msgsArr[0]?.createdAt)
+                    .toLocaleString()
+                    .match(/[A-Za-z0-9/.]*,/gi)?.[0]
+                    ?.replace(",", "")}
+                  className={msgsArr[0]?.createdAt ? "message_date" : ""}
                 >
-                  <div
-                    data-date={new Date(msgsArr[0]?.createdAt).toLocaleString()}
-                    className={msgsArr[0]?.createdAt ? "message_date" : ""}
-                  >
-                    {msgsArr[0]?.createdAt &&
-                      formatTimeDate(msgsArr[0]?.createdAt)}
-                  </div>
-                  {msgsArr.map((e) => {
-                    return (
-                      <ChatPageMessage
-                        key={e.id}
-                        message={e}
-                        setContextMenu={setContextMenu}
-                        setContexPosition={setContexPosition}
-                        contextMenu={contextMenu}
-                        contextPosition={contextPosition}
-                        enableScroll={enableScroll}
-                        disableScroll={disableScroll}
-                        to={to}
-                        chatId={chatId || ""}
-                        setSelectedMessages={setSelectedMessages}
-                        isSelectedMessages={isSelectedMessages}
-                        selectedMessages={selectedMessages}
-                      />
-                    );
-                  })}
+                  {msgsArr[0]?.createdAt &&
+                    formatTimeDate(msgsArr[0]?.createdAt)}
                 </div>
-              );
-            })}
-          </div>
+                {msgsArr.map((e) => {
+                  return (
+                    <ChatPageMessage
+                      messages={messages}
+                      key={e.id}
+                      message={e}
+                      setContextMenu={setContextMenu}
+                      setContexPosition={setContexPosition}
+                      contextMenu={contextMenu}
+                      contextPosition={contextPosition}
+                      enableScroll={enableScroll}
+                      disableScroll={disableScroll}
+                      to={to}
+                      chatId={chatId || ""}
+                      setSelectedMessages={setSelectedMessages}
+                      isSelectedMessages={isSelectedMessages}
+                      selectedMessages={selectedMessages}
+                      chat={chat}
+                      renderMessageContextMenu={renderMessageContextMenu}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
-      ) : (
-        <div className="chat_page_messages"></div>
-      )}
+      </div>
     </>
   );
 });

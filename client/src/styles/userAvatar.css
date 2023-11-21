@@ -1,0 +1,18 @@
+.user_avatar {
+    object-fit: cover;
+}
+
+.user_avatar, .default_avatar  {
+    width: 100%;
+    height: 100%;
+}
+
+
+.default_avatar {
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1em;
+}

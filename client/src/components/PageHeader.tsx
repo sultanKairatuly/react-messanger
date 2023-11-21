@@ -47,7 +47,7 @@ function PageHeader({
           className="back settings_header_button"
           onClick={handleBackClick}
         >
-          <i className="fa-solid fa-left-long settings_header-icon"></i>
+          <i className="fa-solid fa-arrow-left settings_header-icon"></i>
         </button>
         <h1 className="settings_header_title">{title}</h1>
       </div>

@@ -1,0 +1,25 @@
+.faq_container{
+    padding: 10px;
+}
+.faq_title{
+    font-size: 28px;
+    font-weight: 600;
+    margin: 20px 0;
+}
+.faq_questions{
+    display: flex;
+    flex-direction: column;
+    row-gap: 30px;
+}
+
+.faq_question_title{
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+.bold{
+    font-weight: 700;
+}
+.faq_question_body{
+    font-size: 16px;
+}

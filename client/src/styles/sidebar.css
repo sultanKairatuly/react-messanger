@@ -1,14 +1,31 @@
 .sidebar {
     height: 100%;
-    width: 50%;
     position: relative;
-    max-width: 800px;
     overflow-x: hidden;
-    border-right: 2px solid #c0c0c0;
+    overflow-y: scroll;
+    border-right: 1px solid #c0c0c0;
     filter: none;
     background-color: #fff;
 
 }
 .sidebar_main_container{
     padding: 25px;
+}
+
+.container {
+    transition: 0.2s ease-in-out;
+}
+
+.active_slide {
+    opacity: 1; 
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.inactive_slide {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%);
+    width: 0px;
+    height: 0px;
 }

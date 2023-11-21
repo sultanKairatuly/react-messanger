@@ -1,0 +1,36 @@
+.pas_container{
+    padding: 10px;
+}
+
+.pas_items{
+    display: flex;
+    flex-direction: column;
+    row-gap: 40px;
+}
+
+.pas_item{}
+
+.pas_item_title {
+    margin-bottom: 10px;
+    font-size: 25px;
+    font-weight: 600;
+}
+
+.pas_item_sub{
+
+}
+
+.pas_item_subs {
+    display: flex;
+    flex-direction: column;
+    row-gap:30px;
+}
+
+.pas_item_subtitle{
+    font-size: 22px;
+    font-weight:  600;
+}
+
+.pas_item_body{
+    font-size: 17px;
+}

@@ -20,6 +20,7 @@ const Sidebar = observer(function () {
     const userChats = async () => {
       const result = [];
       for (const chatName of store.user?.chats || []) {
+        
         const promise = $api<Chat>(`/chat?chatId=${chatName}`);
         result.push(promise);
       }

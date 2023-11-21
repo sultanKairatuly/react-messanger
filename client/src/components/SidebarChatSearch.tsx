@@ -5,7 +5,7 @@ import { User, userPredicate } from "../types";
 import _ from "lodash";
 import Loader from "./Loader";
 import EmptyMessage from "./AppEmptyMessage";
-import ChatSearchItem from "./ChatSearchItem";
+import ChatItem from "./ChatItem";
 import { useNavigate } from "react-router-dom";
 import store from "../store/store";
 function SidebarChatSearch() {
@@ -46,7 +46,7 @@ function SidebarChatSearch() {
         <EmptyMessage>We didn't found any chats</EmptyMessage>
       )}
       {users.map((e) => (
-        <ChatSearchItem
+        <ChatItem
           key={e.id}
           onClick={() => {
             navigate(`/a/${e.userId}?type=contact`);

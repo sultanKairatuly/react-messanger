@@ -8,6 +8,7 @@ import { Dispatch, SetStateAction } from "react";
 import $api from "../api";
 import { userPredicate } from "../types";
 import Loader from "./Loader";
+import UserAvatar from "./UserAvatar";
 
 function EditProfile() {
   const [userName, setUserName] = useState(store.user?.name || "");
@@ -32,10 +33,8 @@ function EditProfile() {
         userAvatar,
       });
       if (userPredicate(updatedUser.data)) {
-        console.log("Got updated user's profile!");
         store.setUser(updatedUser.data);
       }
-      console.log(updatedUser.data);
     } catch (e) {
       console.log("An error occured: ", e);
     } finally {
@@ -89,12 +88,7 @@ function EditProfile() {
             className="edit_profile_avatar_wrapper"
             onClick={handleAvatarClick}
           >
-            <img
-              src={userAvatar}
-              className="edit_profile_avatar"
-              alt="edit profile avatar"
-            />
-            <i className="fa-solid fa-camera edit_profile_camera"></i>
+            <UserAvatar />
           </div>
 
           <div className="edit_profile_input_wrapper">

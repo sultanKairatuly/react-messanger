@@ -1,4 +1,4 @@
-import { useState, Dispatch, SetStateAction } from "react";
+import { useState, Dispatch, SetStateAction, useRef } from "react";
 import "../styles/Signup.css";
 import "../styles/signupCustomization.css";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -7,10 +7,13 @@ import { User, userPredicate } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import $api from "../api";
 import store from "../store/store";
+import UserAvatar from "./UserAvatar";
+import { convertBaseToBlob, getRandomColor } from "../utils";
 
 function SignupCustomization() {
   const [username, setName] = useState("");
-  const [avatar, setAvatar] = useState("/default_avatar.jpg");
+  const randomColor = useRef(getRandomColor());
+  const [avatar, setAvatar] = useState("default");
   const [nameErrorMessage, setNameErrorMessage] = useState("");
   const [generalErrorMessage, setGeneralErrorMessage] = useState("");
   const navigator = useNavigate();
@@ -43,6 +46,7 @@ function SignupCustomization() {
       if (email && password && id) {
         const newUser: User & { password: string } = {
           password,
+          randomColor: randomColor.current,
           email,
           name: username,
           type: "contact",
@@ -51,7 +55,6 @@ function SignupCustomization() {
           chats: [],
           userId: id,
           blockedContacts: [],
-          messages: {},
           bio: "",
           chatWallpaper: [
             "chat_bg1.jpeg",
@@ -72,6 +75,7 @@ function SignupCustomization() {
           activeChatWallpaper: "chat_bg0.jpeg",
         };
         try {
+          console.log("user: ", newUser);
           const response = await $api.post<string>("/registration", {
             user: newUser,
           });
@@ -99,7 +103,13 @@ function SignupCustomization() {
       if (inputFile.files) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setAvatar(e.target?.result?.toString() || "");
+          const src = convertBaseToBlob(
+            e.target?.result
+              ?.toString()
+              .replace("data:image/jpeg;base64,", "") || ""
+          );
+          setAvatar(URL.createObjectURL(src));
+          console.log(URL.createObjectURL(src));
         };
         reader.readAsDataURL(inputFile.files[0]);
       }
@@ -113,10 +123,10 @@ function SignupCustomization() {
         <h1 className="auth_title">Configure profile</h1>
         <label htmlFor="login" className="signup_label form_label">
           <div className="signup_label_avatar-wrapper">
-            <img
-              src={avatar}
-              className="signup_label_avatar"
-              alt="avatar of your profile"
+            <UserAvatar
+              name={username}
+              url={avatar}
+              color={randomColor.current}
             />
           </div>
           <PrimaryButton

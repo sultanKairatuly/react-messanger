@@ -8,11 +8,11 @@ import {
 import store from "../store/store";
 import { observer } from "mobx-react";
 import $api from "../api";
-import Chat from "./Chat";
+import ChatItem from "./ChatItem";
 import "../styles/forwardMessage.css";
 import { v4 as uuidv4 } from "uuid";
 import { ChatPageContext } from "./ChatPage";
-
+import { socket } from "../socket";
 const ForwardMessage = observer(function ForwardMessages() {
   const [chats, setChats] = useState<ChatType[]>([]);
   const [chatQuery, setQueryChat] = useState("");
@@ -29,6 +29,13 @@ const ForwardMessage = observer(function ForwardMessages() {
     const promises = [];
     if (store.user) {
       for (const activeMessage of context.activeMessages) {
+        console.log(activeMessage);
+        const newMessage = {
+          ...activeMessage,
+          createdAt: Date.now(),
+          id: uuidv4(),
+          status: "pending",
+        };
         const emittingData: EmittingData = {
           to:
             (chat?.type === "contact"
@@ -36,14 +43,9 @@ const ForwardMessage = observer(function ForwardMessages() {
               : chat?.chatId) || "",
           user1: store.user.userId,
           user2: userPredicate(chat) ? chat.userId : chat.chatId,
-          message: {
-            author: store.user,
-            text: activeMessage.text,
-            createdAt: Date.now(),
-            images: [],
-            id: uuidv4(),
-            status: "pending",
-          },
+          message: newMessage,
+          type: chat.type,
+          socketId: socket.id,
         };
         promises.push($api.post("/send-message", emittingData));
       }
@@ -85,7 +87,6 @@ const ForwardMessage = observer(function ForwardMessages() {
             className="fa-solid fa-xmark forward_message_close"
             onClick={() => {
               context.setIsForwardMessage(false);
-              console.log(context.isForwardMessage);
             }}
           ></i>
           <input
@@ -98,10 +99,10 @@ const ForwardMessage = observer(function ForwardMessages() {
         </header>
         <div className="forward_message_chats">
           {filteredChats.map((chat) => (
-            <Chat
+            <ChatItem
+              chat={chat}
               onClick={() => forwardMessageToChat(chat)}
               key={chat.id}
-              chat={chat}
             />
           ))}
           {!filteredChats.length && (

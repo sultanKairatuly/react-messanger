@@ -5,10 +5,23 @@ import {
   createContext,
   Dispatch,
   SetStateAction,
+  useCallback,
+  useRef,
+  useMemo,
 } from "react";
 import { useParams } from "react-router-dom";
 import $api from "../api";
-import { Message, chatPredicate, Chat } from "../types";
+import {
+  Message,
+  chatPredicate,
+  Chat,
+  SystemMessage,
+  groupChatPredicate,
+  ImageMessage,
+  TextMessage,
+  ReplyMessage,
+  MessageQuery,
+} from "../types";
 import useQuery from "../hooks/useQuery";
 import store from "../store/store";
 import { v4 as uuidv4 } from "uuid";
@@ -18,8 +31,10 @@ import { EmittingData } from "../types";
 import ChatPageHeader from "./ChatPageHeader";
 import ChatPageMessages from "./ChatPageMessages";
 import ChatPageFooter from "./ChatPageFooter";
-import SearchMessages from "./SearchMessages";
 import { socket } from "../socket";
+import _ from "lodash";
+import UserInfo from "./UserInfo";
+import GroupInfo from "./GroupInfo";
 
 const MAX_TEXTAREA_HEIGHT = 250;
 const MIN_TEXTAREA_HEIGHT = 40;
@@ -38,55 +53,128 @@ type ChatPageContextType = {
 export const ChatPageContext = createContext({} as ChatPageContextType);
 const ChatPage = observer(function ChatPage() {
   const { chatId } = useParams();
-  const to = ((store.user?.userId || "") + chatId).split("").sort().join("");
   const query = useQuery();
   const [chat, setChat] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState("");
   const [textAreaHeight, setTextAreaHeight] = useState(MIN_TEXTAREA_HEIGHT);
-  const [messages, setMessages] = useState<Message[]>(
-    JSON.parse(localStorage.getItem(to) as string) || []
-  );
   const [loader, setLoader] = useState(false);
   const [ctrl, setCtrl] = useState(false);
   const [shift, setShift] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [selectedMessages, setSelectedMessages] = useState<Message[]>([]);
+  const [selectedMessages, setSelectedMessages] = useState<
+    Exclude<Message, SystemMessage>[]
+  >([]);
   const isSelectedMessages = selectedMessages.length > 0;
   const [isForwardMessage, setIsForwardMessage] = useState(false);
   const [activeMessages, setActiveMessages] = useState<Message[]>([]);
   const [isSearchMessages, setIsSearchMessages] = useState(false);
-
-  async function onMessageSend() {
-    if (
-      store.user &&
-      chatId &&
-      messageText.length > 0 &&
-      messageText.split("").filter((e) => e !== "" && e !== "\n").length
-    ) {
-      const emittingData: EmittingData = {
-        to:
-          (chat?.type === "contact"
-            ? (store.user.userId + chat.userId).split("").sort().join("")
-            : chat?.chatId) || "",
-        user1: store.user.userId,
-        user2: chatId,
-        message: {
-          author: store.user,
-          text: messageText,
-          createdAt: Date.now(),
-          images: [],
-          id: uuidv4(),
-          status: "pending",
-        },
-      };
-      setMessageText("");
-      setTextAreaHeight(MIN_TEXTAREA_HEIGHT);
-      await $api.post("/send-message", emittingData);
+  const [replyMessage, setReplyMessage] = useState<
+    ReplyMessage["replyMessage"] | null
+  >(null);
+  const container = useRef<null | HTMLDivElement>(null);
+  const timeId = useRef(Infinity);
+  const to = useMemo(() => {
+    if (chat) {
+      return (
+        (chat.type === "group"
+          ? chatId
+          : ((store.user?.userId || "") + chatId).split("").sort().join("")) ||
+        ""
+      );
+    } else {
+      return "";
     }
-  }
+  }, [chatId, chat]);
+  const [isUserInfo, setIsUserInfo] = useState(false);
+  const onMessageSend = useCallback(
+    async (messageDetails: MessageQuery) => {
+      const notEmptyWhileTextReply =
+        messageDetails.type === "reply" &&
+        messageDetails.dataType === "text" &&
+        messageText.length > 0;
+      const emptyWhileImageReply =
+        messageDetails.type === "reply" && messageDetails.dataType === "image";
+      if (
+        store.user &&
+        chatId &&
+        chat &&
+        ((messageDetails.type === "text" &&
+          messageText.split("").filter((e) => e !== "" && e !== "\n").length) ||
+          messageDetails.type === "image" ||
+          notEmptyWhileTextReply ||
+          emptyWhileImageReply)
+      ) {
+        let message = {} as Message;
+        if (messageDetails.type === "text") {
+          message = {
+            author: store.user,
+            text: messageText,
+            type: "text",
+            createdAt: Date.now(),
+            id: uuidv4(),
+            status: "pending",
+          } satisfies TextMessage;
+        } else if (messageDetails.type === "image") {
+          message = {
+            author: store.user,
+            type: "image",
+            createdAt: Date.now(),
+            id: uuidv4(),
+            text: messageDetails.text,
+            imageUrl: messageDetails.imageUrl,
+            status: "pending",
+          } satisfies ImageMessage;
+        }
+        let rm: ReplyMessage | null = null;
+        if (messageDetails.type === "reply" && messageDetails.replyingMessage) {
+          if (messageDetails.dataType === "text") {
+            rm = {
+              author: store.user,
+              text: messageText,
+              type: "reply",
+              createdAt: Date.now(),
+              id: uuidv4(),
+              status: "pending",
+              replyMessage: messageDetails.replyingMessage,
+            };
+          } else if (messageDetails.dataType === "image") {
+            rm = {
+              author: store.user,
+              text: messageDetails.text,
+              imageUrl: messageDetails.imageUrl,
+              type: "reply",
+              createdAt: Date.now(),
+              id: uuidv4(),
+              status: "pending",
+              replyMessage: messageDetails.replyingMessage,
+            };
+          }
+        }
+
+        const emittingData: EmittingData = {
+          to:
+            (chat?.type === "contact"
+              ? (store.user.userId + chat.userId).split("").sort().join("")
+              : chat?.chatId) || "",
+          user1: store.user.userId,
+          user2: chatId,
+          message: rm ? rm : message,
+          type: chat?.type,
+          socketId: socket.id,
+        };
+        setMessageText("");
+        setTextAreaHeight(MIN_TEXTAREA_HEIGHT);
+        $api.post(
+          `/stopped-typing?chatId=${chatId}&userId=${store.user?.userId}&socket=${socket.id}`
+        );
+        setReplyMessage(null);
+        await $api.post("/send-message", emittingData);
+      }
+    },
+    [chatId, messageText, chat]
+  );
   useEffect(() => {
     socket.on("update-chat", (chat: unknown) => {
-      console.log("chat: ", chat);
       if (chatPredicate(chat)) {
         setChat(chat);
       }
@@ -98,37 +186,47 @@ const ChatPage = observer(function ChatPage() {
   }, []);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (focused) {
-        if (e.code === "ControlLeft") {
-          setCtrl(true);
-        }
-        if (e.code === "ShiftLeft") {
-          setShift(true);
-        }
-        if (
-          !messageText.split("").filter((e) => e === "\n").length &&
-          e.code === "Backspace"
-        ) {
-          if (textAreaHeight > MIN_TEXTAREA_HEIGHT) {
-            setTextAreaHeight((t) => t - 20);
+      if (store.user) {
+        const message = {
+          author: store.user,
+          text: messageText,
+          type: "text",
+          createdAt: Date.now(),
+          id: uuidv4(),
+          status: "pending",
+        } as const;
+        if (focused) {
+          if (e.code === "ControlLeft") {
+            setCtrl(true);
           }
-        }
-        if (store.sendMode === "enter") {
-          if (shift && e.code === "Enter") {
-            if (textAreaHeight < MAX_TEXTAREA_HEIGHT) {
-              setTextAreaHeight((t) =>
-                t === MAX_TEXTAREA_HEIGHT ? t : 20 + t
-              );
-            }
-          } else if (e.code === "Enter") {
-            onMessageSend();
+          if (e.code === "ShiftLeft") {
+            setShift(true);
           }
-        } else {
-          if (e.code === "Enter" && ctrl) {
-            onMessageSend();
-          } else if (e.code === "Enter") {
+          if (
+            !messageText.split("").filter((e) => e === "\n").length &&
+            e.code === "Backspace"
+          ) {
             if (textAreaHeight > MIN_TEXTAREA_HEIGHT) {
-              setTextAreaHeight((t) => t + 20);
+              setTextAreaHeight((t) => t - 20);
+            }
+          }
+          if (store.sendMode === "enter") {
+            if (shift && e.code === "Enter") {
+              if (textAreaHeight < MAX_TEXTAREA_HEIGHT) {
+                setTextAreaHeight((t) =>
+                  t === MAX_TEXTAREA_HEIGHT ? t : 20 + t
+                );
+              }
+            } else if (e.code === "Enter") {
+              onMessageSend(message);
+            }
+          } else {
+            if (e.code === "Enter" && ctrl) {
+              onMessageSend(message);
+            } else if (e.code === "Enter") {
+              if (textAreaHeight > MIN_TEXTAREA_HEIGHT) {
+                setTextAreaHeight((t) => t + 20);
+              }
             }
           }
         }
@@ -160,6 +258,7 @@ const ChatPage = observer(function ChatPage() {
       try {
         setLoader(true);
         const { data } = await $api.get(`/chat?chatId=${chatId}`);
+        console.log("chat data: ", data);
         if (chatPredicate(data)) {
           setChat(data);
           await $api.post(
@@ -174,10 +273,21 @@ const ChatPage = observer(function ChatPage() {
     }
     fetchChat();
   }, [chatId, query]);
-
+  const delayedQuery = useCallback(
+    _.debounce((value: string) => {
+      if (value.split("").filter((val) => val !== "\n").length !== 0) {
+        $api.post(`/typing?chatId=${chatId}&userId=${store.user?.userId}`);
+      } else {
+        $api.post(
+          `/stopped-typing?chatId=${chatId}&userId=${store.user?.userId}`
+        );
+      }
+    }, 500),
+    [chatId]
+  );
   return (
     <>
-      {chat && (
+      {chat ? (
         <ChatPageContext.Provider
           value={{
             setIsForwardMessage,
@@ -191,7 +301,7 @@ const ChatPage = observer(function ChatPage() {
             chat,
           }}
         >
-          <div className="chat_page_container2">
+          <div className="chat_page_container2" ref={container}>
             <div className="chat_page_container">
               {loader && <HiddenLoader />}
               <div
@@ -202,39 +312,95 @@ const ChatPage = observer(function ChatPage() {
                   backgroundImage: `url(/${store.user?.activeChatWallpaper})`,
                 }}
               ></div>
-              <ChatPageHeader chat={chat} />
+              <ChatPageHeader chat={chat} setIsUserInfo={setIsUserInfo} />
               <div className="chat_page_content">
                 <ChatPageMessages
-                  type="contact"
+                  type={chat.type}
+                  setReplyMessage={setReplyMessage}
                   to={to}
-                  messages={messages}
-                  setMessages={setMessages}
+                  isSearchMessages={isSearchMessages}
                   messageText={messageText}
                   isSelectedMessages={isSelectedMessages}
                   setSelectedMessages={setSelectedMessages}
                   selectedMessages={selectedMessages}
+                  chat={chat}
+                  containerRef={container.current}
                 />
-                <ChatPageFooter
-                  setSelectedMessages={setSelectedMessages}
-                  isSelectedMessages={isSelectedMessages}
-                  selectedMessages={selectedMessages}
-                  textAreaHeight={textAreaHeight}
-                  setFocused={setFocused}
-                  value={messageText}
-                  onMessageSend={onMessageSend}
-                  onChange={(e) => setMessageText(e.target.value)}
-                />
+                {groupChatPredicate(chat) &&
+                  !store.user?.chats.includes(chat.chatId) && (
+                    <button
+                      className="join_button"
+                      onClick={() => {
+                        socket.emit("joinGroup", {
+                          chat: {
+                            chatId,
+                            members: chat.members.map((m) => m.userId),
+                          },
+                          joiner: store.user,
+                        });
+                      }}
+                    >
+                      JOIN
+                    </button>
+                  )}
+                {groupChatPredicate(chat) ? (
+                  store.user?.chats.includes(chat.chatId) && (
+                    <ChatPageFooter
+                      setReplyMessage={setReplyMessage}
+                      setSelectedMessages={setSelectedMessages}
+                      isSelectedMessages={isSelectedMessages}
+                      selectedMessages={selectedMessages}
+                      textAreaHeight={textAreaHeight}
+                      setFocused={setFocused}
+                      value={messageText}
+                      onMessageSend={onMessageSend}
+                      replyMessage={replyMessage}
+                      onChange={(e) => {
+                        delayedQuery(e.target.value);
+                        clearTimeout(timeId.current);
+                        setMessageText(e.target.value);
+                      }}
+                    />
+                  )
+                ) : (
+                  <ChatPageFooter
+                    setReplyMessage={setReplyMessage}
+                    setSelectedMessages={setSelectedMessages}
+                    isSelectedMessages={isSelectedMessages}
+                    selectedMessages={selectedMessages}
+                    textAreaHeight={textAreaHeight}
+                    setFocused={setFocused}
+                    value={messageText}
+                    replyMessage={replyMessage}
+                    onMessageSend={onMessageSend}
+                    onChange={(e) => {
+                      delayedQuery(e.target.value);
+                      clearTimeout(timeId.current);
+                      setMessageText(e.target.value);
+                    }}
+                  />
+                )}
               </div>
             </div>
-            <SearchMessages
-              messages={messages}
-              chat={chat}
-              style={{
-                width: isSearchMessages ? "70%" : "0%",
-              }}
-            />
+            {chat.type === "contact" ? (
+              <UserInfo
+                style={{
+                  width: isUserInfo && !isSearchMessages ? "70%" : "0%",
+                }}
+                setIsUserInfo={setIsUserInfo}
+              />
+            ) : (
+              <GroupInfo
+                style={{
+                  width: isUserInfo && !isSearchMessages ? "70%" : "0%",
+                }}
+                setIsUserInfo={setIsUserInfo}
+              />
+            )}
           </div>
         </ChatPageContext.Provider>
+      ) : (
+        <HiddenLoader />
       )}
     </>
   );

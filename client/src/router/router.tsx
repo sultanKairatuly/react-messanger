@@ -5,6 +5,7 @@ import Signup from "../components/Signup";
 import Signin from "../components/Signin";
 import SignupCustomization from "../components/SignupCustomization";
 import ChatPage from "../components/ChatPage";
+import EmptyChatPage from "../components/EmptyChatPage";
 
 const routes: RouteObject[] = [
   {
@@ -14,6 +15,10 @@ const routes: RouteObject[] = [
       {
         path: "/a/:chatId",
         element: <ChatPage />,
+      },
+      {
+        path: "/",
+        element: <EmptyChatPage />,
       },
     ],
   },

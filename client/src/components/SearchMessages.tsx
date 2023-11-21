@@ -1,11 +1,12 @@
 import "../styles/searchMessages.css";
-import { Chat, Message } from "../types";
+import { Chat, Message, textMessagePredicate } from "../types";
 import ChatItem from "./ChatItem";
 import SearchMessagesHeader from "./SearchMessagesHeader";
 import { useState, useMemo } from "react";
 import { getTimeFormatted } from "../utils";
 import store from "../store/store";
 import { observer } from "mobx-react";
+
 
 type SearchMessagesProps = {
   messages: Message[];
@@ -22,13 +23,16 @@ const renderHintedMessage = (messageText: string, query: string) =>
 
 const SearchMessages = observer(function SearchMessages({
   messages,
-  chat,
   style,
 }: SearchMessagesProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const filteredMessages = useMemo(
     () =>
-      !searchQuery ? [] : messages.filter((m) => m.text.includes(searchQuery)),
+      !searchQuery
+        ? []
+        : messages
+            .filter((m) => m.text.includes(searchQuery))
+            .filter(textMessagePredicate),
     [messages, searchQuery]
   );
 
@@ -49,7 +53,7 @@ const SearchMessages = observer(function SearchMessages({
                 message.createdAt,
                 store.timeFormat
               )}
-              chat={chat}
+              chat={message.author}
               key={message.id}
               onClick={() => {
                 const messageElement = document.querySelector(
@@ -77,6 +81,7 @@ const SearchMessages = observer(function SearchMessages({
           <div className="search_messages_text">Couldn't find any messages</div>
         )}
       </div>
+
     </div>
   );
 });

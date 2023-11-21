@@ -14,7 +14,7 @@ function SettingsControls() {
     },
     {
       title: "Notification",
-      icon: "fa-solid fa-bell",
+      icon: "fa-regular fa-bell",
       action() {
         store.resetAll();
         store.notification = true;
@@ -42,14 +42,6 @@ function SettingsControls() {
       action() {
         store.resetAll();
         store.faq = true;
-      },
-    },
-    {
-      title: "Ask a Question",
-      icon: "fa-solid fa-comment-dots",
-      action() {
-        store.resetAll();
-        store.askQuestion = true;
       },
     },
   ];

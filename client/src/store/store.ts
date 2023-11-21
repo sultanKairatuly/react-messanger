@@ -25,10 +25,11 @@ type StorePrototype = {
     notificationMessage: string,
     blured: boolean,
     messageTextSize: number,
+    newGroup: boolean,
+    webNotifications: boolean,
     resetAll:() => void,
     setUser(payload: User): void,
     setNotificationMessage(message: string, ms?: number): void,
-    addMessage(message: string, chatId: string): void
 }
 
 const storePrototype: StorePrototype = {
@@ -51,6 +52,8 @@ const storePrototype: StorePrototype = {
     notificationMessage: "",
     savedMessages: false,
     messageTextSize: 16,
+    newGroup: false,
+    webNotifications: localStorage.getItem("webNotifications") == null ?  false : (localStorage.getItem("webNotifications") == 'true' ? true : false),
     setNotificationMessage(message: string, ms: number = 1500){
         this.notificationMessage = message;
         setTimeout(() => {
@@ -69,11 +72,6 @@ const storePrototype: StorePrototype = {
         store.faq = false;
         store.privacyAndSecurity = false;
     },
-    addMessage(message, chatId){
-        const parsed = JSON.parse(message);
-        console.log('parsed: ', parsed)
-        this.user?.messages[chatId].push(parsed)
-    }
 }
 const store = makeAutoObservable(storePrototype)
 

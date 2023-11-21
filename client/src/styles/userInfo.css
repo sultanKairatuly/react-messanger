@@ -1,0 +1,23 @@
+.user_info_container {
+    height: 100vh;
+    width: 70%;
+    transition: 0.3s ease-in-out;
+    position: relative;
+    overflow: scroll;
+    max-width: 450px;
+    background-color: #fff;
+    border-left: 1px solid #dadce0;
+}
+
+
+.user_info_avatar_wrapper{
+    height: 50vh;
+}
+
+.members_title{
+    color: rgb(4, 150, 247);
+    font-size: 23px;
+    margin: 15px 0;
+    text-align: center;
+    padding-bottom: 10px;
+}

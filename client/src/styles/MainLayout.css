@@ -5,7 +5,7 @@
 }
 
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 3px;
   }
   
   /* Track */
@@ -23,4 +23,34 @@
   /* Handle on hover */
   ::-webkit-scrollbar-thumb:hover {
     background: transparent;
+  }
+
+  .sidebar_container{
+    max-width: 800px;
+    min-width: 250px;
+    position: relative;
+    width: 1000px;
+  }
+
+  .outlet_container{
+    width: 50%;
+    flex: 1;
+  }
+
+  .resize_col{
+    height: 100%;
+    width: 2px;
+    right: 0;
+    top: 0;
+    z-index: 10;
+    position: absolute;
+    cursor:e-resize;
+  }
+
+
+  @media (max-width: 1440px) {
+    .sidebar_container{
+     max-width: 450px;
+    }
+  
   }

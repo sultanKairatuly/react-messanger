@@ -1,6 +1,9 @@
 import "../styles/searchMessagesHeader.css";
 import { useState, useContext } from "react";
 import { ChatPageContext } from "./ChatPage";
+import { DatePicker } from "react-date-picker";
+import "react-date-picker/dist/DatePicker.css";
+import "react-calendar/dist/Calendar.css";
 
 type SearchMessagesHeaderProps = {
   value: string;
@@ -10,6 +13,7 @@ type SearchMessagesHeaderProps = {
 function SearchMessagesHeader({ value, onChange }: SearchMessagesHeaderProps) {
   const [isFocused, setIsFocused] = useState(false);
   const context = useContext(ChatPageContext);
+  const [dateValue, setDateValue] = useState(new Date(Date.now()));
 
   return (
     <div className="search_messages_header">
@@ -33,9 +37,28 @@ function SearchMessagesHeader({ value, onChange }: SearchMessagesHeaderProps) {
           }
         />
       </div>
-      <button className="search_messages_header_date">
-        <i className="fa-regular fa-calendar "></i>
-      </button>
+      <DatePicker
+        closeCalendar={false}
+        onChange={(value) => {
+          if (value instanceof Date) {
+            const messageElement = document.querySelector(
+              `[data-date="${value.toLocaleDateString()}"]`
+            );
+            if (messageElement) {
+              messageElement.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+              messageElement.classList.add("contexed_message");
+              setTimeout(() => {
+                messageElement.classList.remove("contexed_message");
+              }, 1000);
+            }
+            setDateValue(value as Date);
+          }
+        }}
+        value={dateValue}
+      />
     </div>
   );
 }

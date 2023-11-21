@@ -6,6 +6,8 @@ type GrayMenuProps = {
   items: GrayMenuItemType[];
   message?: Message;
   isMenu: boolean;
+  x?: "right" | "left";
+  y?: "top" | "bottom";
   position?: { x: number; y: number };
   animationFrom?: string;
 };
@@ -13,14 +15,16 @@ function GrayMenu({
   items,
   message,
   isMenu,
+  x = "left",
+  y = "top",
   position = { x: 0, y: 0 },
   animationFrom: transformOrigin = "top left",
 }: GrayMenuProps) {
   return (
     <div
       style={{
-        top: `${position.y}px`,
-        left: `${position.x}px`,
+        [y]: `${position.y}px`,
+        [x]: `${position.x}px`,
         transformOrigin,
       }}
       className={

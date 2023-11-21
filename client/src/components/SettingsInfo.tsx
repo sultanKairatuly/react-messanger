@@ -2,12 +2,12 @@ import { observer } from "mobx-react";
 import { SettingsOptionType } from "../types";
 import store from "../store/store";
 import SettingsOptionsList from "./SettingsOptionsList";
-
+import UserAvatar from "./UserAvatar";
 const SettingsInfo = observer(function () {
   const settingsOptions: SettingsOptionType[] = [
     {
       title: store.user?.email ?? "Uknown",
-      icon: "fa-solid fa-envelope",
+      icon: "fa-regular fa-envelope",
       description: "Your email",
       action() {
         navigator.clipboard.writeText(store.user?.email || "").then(() => {
@@ -17,8 +17,8 @@ const SettingsInfo = observer(function () {
     },
     {
       title: store.user?.userId ?? "Uknown",
-      icon: "fa-solid fa-user",
-      description: "Your name",
+      icon: "fa-regular fa-user",
+      description: "User ID",
       action() {
         navigator.clipboard.writeText(store.user?.userId || "").then(() => {
           store.setNotificationMessage("User ID is copied!");
@@ -29,11 +29,7 @@ const SettingsInfo = observer(function () {
   return (
     <div className="settings_info_container">
       <div className="settings_container_avatar-wrapper">
-        <img
-          src={store.user?.avatar}
-          alt="avatar of the user"
-          className="settings_container_avatar"
-        />
+        <UserAvatar fontSize="14rem" />
         <div className="settings_container_avatar_name">{store.user?.name}</div>
       </div>
       <SettingsOptionsList options={settingsOptions} />

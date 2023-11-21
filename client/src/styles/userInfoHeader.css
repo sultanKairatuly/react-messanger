@@ -1,0 +1,40 @@
+.user_info_header {
+    display: flex;
+    padding: 10px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    z-index: 10;
+}
+
+.user_info_header_text{
+    font-size: 20px;
+    font-weight: 600;
+    margin-left: 20px;
+    
+}
+
+.user_info_header_close {
+    width: 45px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+    transition: 0.2s ease-in-out;
+}
+
+.user_info_header_close i {
+    color: #a0a0a0;
+    font-size: 23px;
+}
+
+.user_info_header_close:hover {
+    background-color: #e5e5e5;
+}

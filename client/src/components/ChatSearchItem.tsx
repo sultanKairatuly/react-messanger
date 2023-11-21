@@ -1,7 +1,7 @@
-import type { User } from "../types";
+import type { Chat } from "../types";
 
 type ChatSearchItemProps = {
-  chat: User;
+  chat: Chat;
   onClick?: () => void;
 };
 function ChatSearchItem({ chat, onClick }: ChatSearchItemProps) {

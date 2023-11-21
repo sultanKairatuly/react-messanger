@@ -1,9 +1,10 @@
 import { Chat } from "../types";
 import "../styles/chatItem.css";
+import UserAvatar from './UserAvatar'
 
 type ChatItemProps = {
   chat: Chat;
-  topRightText: React.ReactNode | string;
+  topRightText?: React.ReactNode | string;
   children?: React.ReactNode;
   onClick?: () => void;
   icon?: string;
@@ -18,11 +19,7 @@ function ChatItem({
   return (
     <div className="chat_item_container" onClick={onClick}>
       <div className="chat_item_avatar_wrapper">
-        <img
-          src={chat.avatar}
-          alt="chat picture"
-          className="chat_item_avatar"
-        />
+        <UserAvatar color={chat.randomColor} name={chat.name}  url={chat.avatar} />
       </div>
       <div className="chat_item_text">
         <div className="chat_item_title">
@@ -31,7 +28,6 @@ function ChatItem({
             <i className={icon + " chat_item_icon"}></i>
           </div>
         </div>
-
         <h4 className="chat_item_subtitle">{children}</h4>
       </div>
 
