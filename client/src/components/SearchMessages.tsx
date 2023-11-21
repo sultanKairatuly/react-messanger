@@ -32,7 +32,7 @@ const SearchMessages = observer(function SearchMessages({
         ? []
         : messages
             .filter((m) => m.text.includes(searchQuery))
-            .filter(textMessagePredicate),
+            .filter(textMessagePredicate).sort((a, b) => a.createdAt > b.createdAt ? -1 : 1),
     [messages, searchQuery]
   );
 

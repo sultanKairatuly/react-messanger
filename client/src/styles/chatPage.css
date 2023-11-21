@@ -695,6 +695,6 @@ time
 
 @media (max-width: 1440px){
     .chat_page_messages{
-        padding: 5px;
+        padding: 0 15px;
     }
 }
