@@ -10,7 +10,6 @@ import { observer } from "mobx-react";
 import { getTimeFormatted } from "../utils";
 import { socket } from "../socket";
 import UserAvatar from "./UserAvatar";
-
 type ContactMessageProps = {
   message: Exclude<Message, SystemMessage>;
   onContextMenu: (
@@ -31,6 +30,17 @@ type ContactMessageProps = {
   isAvatar?: boolean;
   group?: boolean;
 };
+
+const dynamicCheckboxStylesGeenrator = (
+  cond: boolean
+): Record<string, unknown> => ({
+  marginLeft: cond ? "10px" : "0px",
+  visibility: cond ? "visible" : "hidden",
+  opacity: cond ? 1 : 0,
+  scale: cond ? "1" : "0",
+  width: cond ? "30px" : "0",
+});
+
 const ContactMessage = observer(function ContactMessage({
   message: e,
   onContextMenu,
@@ -62,6 +72,7 @@ const ContactMessage = observer(function ContactMessage({
       key={e.id + e.createdAt + e.text}
       onClick={() => handleMessageClick(e)}
       style={{
+        marginRight: isSelectedMessages ? "30px" : "0",
         cursor: isSelectedMessages ? "pointer" : "default",
       }}
       className={
@@ -75,6 +86,9 @@ const ContactMessage = observer(function ContactMessage({
       }
     >
       <div
+        style={dynamicCheckboxStylesGeenrator(
+          e.author.userId !== store.user?.userId && isSelectedMessages
+        )}
         className={
           (isSelectedMessages
             ? "active_checkbox_wrapper"
@@ -89,7 +103,6 @@ const ContactMessage = observer(function ContactMessage({
           <div className="inactive_selected_checkbox selected_checkbox"></div>
         )}
       </div>
-
       <div
         className={
           (e.author?.userId === store.user?.userId
@@ -264,13 +277,23 @@ const ContactMessage = observer(function ContactMessage({
             </footer>
           </div>
         </div>
-        {group && !isAvatar && (
-          <div className="message_author_avatar_wrapper"></div>
+      </div>
+      <div
+        style={dynamicCheckboxStylesGeenrator(
+          e.author.userId === store.user?.userId && isSelectedMessages
         )}
-        {isAvatar && e.author.userId === store.user?.userId && (
-          <div className="message_author_avatar_wrapper">
-            <UserAvatar color={e.author.randomColor} name={e.author.name} />
+        className={
+          (isSelectedMessages
+            ? "active_checkbox_wrapper"
+            : "inactive_checkbox_wrapper") + " checkbox_wrapper"
+        }
+      >
+        {selectedMessages.some((m) => m.id === e.id) ? (
+          <div className="active_selected_checkbox selected_checkbox">
+            <i className="fa-solid fa-check active_selected_checkbox_icon"></i>
           </div>
+        ) : (
+          <div className="inactive_selected_checkbox selected_checkbox"></div>
         )}
       </div>
       {renderMessageContextMenu(e)}

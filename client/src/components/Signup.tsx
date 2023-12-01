@@ -3,6 +3,7 @@ import "../styles/Signup.css";
 import PrimaryButton from "./AppButton";
 import { NavLink, useNavigate } from "react-router-dom";
 import $api from "../api";
+import { useTranslation } from "react-i18next";
 
 function Signup() {
   const [login, setLogin] = useState("");
@@ -14,6 +15,7 @@ function Signup() {
   const [idErrorMessage, setIdErrorMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   function handleLoginChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLogin(e.target.value);
@@ -53,22 +55,19 @@ function Signup() {
     );
     console.log(candidate);
     if (login.length === 0) {
-      showErrorMessage("Field must be filled!", setLoginErrorMessage);
+      showErrorMessage(t("fieldError"), setLoginErrorMessage);
     } else if (id.length <= 4) {
-      showErrorMessage("Id must have more than 4 symbols!", setIdErrorMessage);
+      showErrorMessage(t("idLengthError"), setIdErrorMessage);
     } else if (id.match(/а-яё/gi)) {
-      showErrorMessage("Id must contain only latin!", setIdErrorMessage);
+      showErrorMessage(t("idLatingError"), setIdErrorMessage);
     } else if (password.length < 5) {
-      showErrorMessage(
-        "Password must have more than 4 symbols!",
-        setPasswordErrorMessage
-      );
+      showErrorMessage(t("pswLengthError"), setPasswordErrorMessage);
     } else if (!login.match(/.+@(gmail.com)|(mail.ru)/gm)) {
-      showErrorMessage("Email must be valid!", setLoginErrorMessage);
+      showErrorMessage(t("emailValidError"), setLoginErrorMessage);
     } else if (repeatedPassword !== password) {
-      showErrorMessage("Passwords doesn't match!", setPasswordErrorMessage);
+      showErrorMessage(t("pswMatchError"), setPasswordErrorMessage);
     } else if (candidate.data) {
-      showErrorMessage("Email already in use!", setLoginErrorMessage);
+      showErrorMessage(t("emailInuseError"), setLoginErrorMessage);
     } else {
       localStorage.setItem("password", password);
       localStorage.setItem("email", login);
@@ -80,15 +79,17 @@ function Signup() {
   return (
     <div className="signup_container">
       <div className="signup_form">
-        <h1 className="auth_title">Registration</h1>
+        <h1 className="auth_title">{t("registration")}</h1>
         <label htmlFor="login" className="signup_label form_label">
-          <h2 className="signup_label_title from_label_title">Your Email: </h2>
+          <h2 className="signup_label_title from_label_title">
+            {t("Your email")}:{" "}
+          </h2>
           <div className="auth_from_input-wrapper">
             <input
               className="auth_form_input"
               value={login}
               onChange={handleLoginChange}
-              placeholder="Your email"
+              placeholder={t("Your email")}
               type="text"
             />
           </div>
@@ -104,13 +105,15 @@ function Signup() {
           </div>
         </label>
         <label htmlFor="id" className="signup_label form_label">
-          <h2 className="signup_label_title from_label_title">Your ID: </h2>
+          <h2 className="signup_label_title from_label_title">
+            {t("userId")}:{" "}
+          </h2>
           <div className="auth_from_input-wrapper">
             <input
               className="auth_form_input"
               value={id}
               onChange={handleIdChange}
-              placeholder="Your id"
+              placeholder={t("userId")}
               type="text"
             />
           </div>
@@ -127,14 +130,14 @@ function Signup() {
         </label>
         <label htmlFor="password" className="signup_label form_label">
           <h2 className="signup_label_title from_label_title">
-            Create password
+            {t("createPsw")}
           </h2>
           <div className="auth_form_input-wrapper">
             <input
               className="auth_form_input"
               value={password}
               onChange={handlePasswordChange}
-              placeholder="Your new password"
+              placeholder={t("yourPassword")}
               type={isPwt ? "text" : "password"}
             />
             <i
@@ -158,14 +161,14 @@ function Signup() {
         </label>
         <label htmlFor="repeated password" className="signup_label form_label">
           <h2 className="signup_label_title from_label_title">
-            Repeat password
+            {t("repeatPsw")}
           </h2>
           <div className="auth_form_input-wrapper">
             <input
               className="auth_form_input"
               value={repeatedPassword}
               onChange={handleRepeatedPasswordChange}
-              placeholder="Repeat password"
+              placeholder={t("repeatPsw")}
               type={isPwt ? "text" : "password"}
             />
             <i
@@ -178,12 +181,12 @@ function Signup() {
           </div>
         </label>
         <div className="signin_link">
-          Already have an account?{" "}
+          {t("alreadyHave")}{" "}
           <NavLink className="signin_link_span" to="/signin">
-            Sign in then.
+            {t("signin")}
           </NavLink>
         </div>
-        <PrimaryButton onClick={handleSignUpClick}>Next</PrimaryButton>
+        <PrimaryButton onClick={handleSignUpClick}>{t("next")}</PrimaryButton>
       </div>
     </div>
   );

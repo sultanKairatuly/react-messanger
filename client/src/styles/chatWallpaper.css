@@ -35,3 +35,15 @@
     padding:  10px;
     border: 3px solid #2a9dd5;
 }
+
+@media (max-width: 1440px) {
+    .chat_wallpaper_background_wrapper_active{
+        padding:  5px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .chat_wallpaper_background_wrapper_active{
+        padding:  2px;
+    }
+}

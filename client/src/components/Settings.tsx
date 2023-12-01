@@ -4,6 +4,7 @@ import { observer } from "mobx-react";
 import GeneralSettings from "./GeneralSettings";
 import SettingsMain from "./SettingsMain";
 import EditProfile from "./EditProfile";
+import Language from "./Language";
 
 const Settings = observer(function Settings() {
   const allFalsy =
@@ -20,6 +21,7 @@ const Settings = observer(function Settings() {
       {allFalsy && <SettingsMain />}
       {store.generalSettings && <GeneralSettings />}
       {store.edit && <EditProfile />}
+      {store.language && <Language />}
     </div>
   );
 });

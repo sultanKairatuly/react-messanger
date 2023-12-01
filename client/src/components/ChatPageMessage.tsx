@@ -36,6 +36,8 @@ type ChatPageMessageProps = {
   contextPosition: { x: number; y: number };
   messages: Message[];
   renderMessageContextMenu: (message: Message) => JSX.Element | undefined;
+  i: number;
+  fetchMoreMessages: (newPage: number) => Promise<void>;
 };
 
 const ChatPageMessage = observer(function ({
@@ -50,7 +52,9 @@ const ChatPageMessage = observer(function ({
   to,
   chat,
   chatId,
+  i,
   enableScroll,
+  fetchMoreMessages,
   messages,
   renderMessageContextMenu,
 }: ChatPageMessageProps) {
@@ -65,7 +69,23 @@ const ChatPageMessage = observer(function ({
       }
     };
     document.addEventListener("click", onClickOutside);
-
+    if ((i + 25) % 25 === 0) {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          const page =
+            messages.length === 0 ? 1 : Math.ceil(messages.length / 25);
+          const newPage = Math.ceil((i + 25) / 25) + 1;
+          if (newPage > page) {
+            console.log("fetch more");
+            fetchMoreMessages(newPage);
+          }
+        }
+      });
+      const observingElement = document.createElement("div");
+      const container = document.querySelector("#chat_page_message_container");
+      container?.appendChild(observingElement);
+      observer.observe(observingElement);
+    }
     return () => {
       document.removeEventListener("click", onClickOutside);
     };
@@ -84,6 +104,7 @@ const ChatPageMessage = observer(function ({
     },
     [isSelectedMessages, selectedMessages, setSelectedMessages]
   );
+
   const onContextMenu = useCallback(
     (ev: React.MouseEvent<HTMLDivElement, MouseEvent>, e: Message) => {
       ev.preventDefault();

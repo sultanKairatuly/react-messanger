@@ -9,8 +9,9 @@ function GrayMenuItem({ item, message }: GrayMenuItemProps) {
     <div
       onClick={() => item.action(message)}
       className={
-        (item.title.includes("Delete") ? "gray_menu_head_red" : "") +
-        " gray_menu_item"
+        (item.title.includes("Delete") || item.title.includes("Удалить")
+          ? "gray_menu_head_red"
+          : "") + " gray_menu_item"
       }
     >
       <div className="gray_menu_head">

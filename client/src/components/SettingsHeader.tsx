@@ -2,13 +2,15 @@ import PageHeader from "./PageHeader";
 import store from "../store/store";
 import type { SettingsOptionType } from "../types";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function SettingsHeader() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const dropdownItems: SettingsOptionType[] = [
     {
-      title: "Log out",
+      title: t("logout"),
       icon: "fa-solid fa-arrow-right-from-bracket",
       action() {
         store.user = null;
@@ -27,7 +29,7 @@ function SettingsHeader() {
 
   return (
     <PageHeader
-      title="Settings"
+      title={t("Settings")}
       handleBackClick={handleBack}
       handleEditClick={handleEdit}
       dropdownItems={dropdownItems}

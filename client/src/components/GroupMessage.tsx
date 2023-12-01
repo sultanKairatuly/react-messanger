@@ -36,6 +36,23 @@ const isAvatar = (
     messages[messages.findIndex((m) => m.id === e.id) + 1],
     messages[messages.findIndex((m) => m.id === e.id)]
   );
+
+const isName = (
+  e: Exclude<Message, SystemMessage>,
+  messages: Exclude<Message, SystemMessage>[]
+) => {
+  return (
+    ((messages[messages.findIndex((m) => m.id === e.id) - 1]?.author?.userId !==
+      e.author.userId ||
+      !messages[messages.findIndex((m) => m.id === e.id) - 1]) &&
+      messages[messages.findIndex((m) => m.id === e.id) + 1]?.author?.userId ===
+        e.author.userId) ||
+    hasDifference(
+      messages[messages.findIndex((m) => m.id === e.id) - 1],
+      messages[messages.findIndex((m) => m.id === e.id)]
+    )
+  );
+};
 const GroupMessage = observer(function GroupMessage({
   message: e,
   onContextMenu,
@@ -70,13 +87,16 @@ const GroupMessage = observer(function GroupMessage({
             ? "self_message"
             : "opossite_message") + " chat_page_message_content_wrapper"
         }
+        style={{
+          padding: 0,
+        }}
       >
         <div className="group_message_wrapper">
           <ContactMessage
             group={true}
             message={e}
             isAvatar={isAvatar(e, messages)}
-            isName={true}
+            isName={isName(e, messages)}
             onContextMenu={onContextMenu}
             isSelectedMessages={isSelectedMessages}
             contextMenu={contextMenu}

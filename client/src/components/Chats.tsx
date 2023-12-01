@@ -1,16 +1,11 @@
-import {
-  userPredicate,
-  type Chat,
-  Message,
-  textMessagePredicate,
-} from "../types";
+import { userPredicate, type Chat, Message } from "../types";
 import { useNavigate } from "react-router-dom";
 import ChatItem from "./ChatItem";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import $api from "../api";
 import { observer } from "mobx-react";
 import store from "../store/store";
-import { getTimeFormatted } from "../utils";
+import { getTimeFormatted, compareArrays } from "../utils";
 import HiddenLoader from "./HiddenLoader";
 import { socket } from "../socket";
 type ChatsProps = {
@@ -19,6 +14,7 @@ type ChatsProps = {
 
 const Chats = observer(function Chats({ chats }: ChatsProps) {
   const [loading, setLoading] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const to = useCallback(
     (c: Chat) =>
@@ -37,15 +33,38 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
       ),
     [chats]
   );
-  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [messages, setMessages] = useState<Record<string, Message[]>>(
+    JSON.parse(localStorage.getItem("chatMessages") as string) || {}
+  );
+
+  useEffect(() => {
+    function handleWindowResize(e: UIEvent) {
+      if (
+        e.target &&
+        "innerWidth" in e.target &&
+        typeof e.target.innerWidth === "number"
+      ) {
+        setWindowWidth(e.target.innerWidth);
+      }
+    }
+    window.addEventListener("resize", handleWindowResize);
+
+    return () => {
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }, []);
   useEffect(() => {
     socket.on("update-messages", ({ data, id }) => {
       setMessages((m) => ({ ...m, [id]: data }));
+      localStorage.setItem("chatMessages", JSON.stringify(messages));
     });
 
     const fetchMessages = async () => {
       try {
-        setLoading(true);
+        if (!Object.keys(messages).length) {
+          setLoading(true);
+        }
+
         const response = await $api<Message[][]>(
           `/get-all-messages?messageIds=${JSON.stringify(messageIds)}`
         );
@@ -57,7 +76,13 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
           },
           {} as Record<string, Message[]>
         );
-        typeof response.data === "object" && setMessages(() => mapped);
+        if (typeof response.data === "object" && response.data != null) {
+          const isEqual = compareArrays(messages, mapped);
+          if (!isEqual) {
+            setMessages(() => mapped);
+            localStorage.setItem("chatMessages", JSON.stringify(mapped));
+          }
+        }
       } catch (e) {
         console.log(e);
       } finally {
@@ -73,7 +98,10 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
       {loading && <HiddenLoader />}
       {!messageIds && <HiddenLoader />}
       {chats.map((c) => (
-        <div key={c.id}>
+        <div
+          key={c.id}
+          onClick={() => windowWidth < 500 && (store.isSidebar = false)}
+        >
           <ChatItem
             icon={
               store.user?.mutedContacts.includes(
@@ -82,23 +110,23 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
                 ? "fa-solid fa-volume-xmark"
                 : ""
             }
-            topRightText={`${getTimeFormatted(
-              messages[to(c)]?.[messages[to(c)]?.length - 1]?.createdAt,
-              store.timeFormat
-            )} ${
-              messages[to(c)]?.filter(
-                (m) =>
-                  textMessagePredicate(m) &&
-                  m.status === "received" &&
-                  m.author.userId === store.user?.userId
-              ).length
-            }`}
+            topRightText={
+              messages[to(c)]?.[messages[to(c)]?.length - 1]?.createdAt
+                ? getTimeFormatted(
+                    messages[to(c)]?.[messages[to(c)]?.length - 1]?.createdAt,
+                    store.timeFormat
+                  )
+                : ""
+            }
             onClick={() =>
               navigate(`/a/${userPredicate(c) ? c.userId : c?.chatId}`)
             }
             chat={c}
           >
-            {messages[to(c)]?.[messages[to(c)]?.length - 1]?.text}
+            {messages[to(c)]?.[messages[to(c)]?.length - 1] &&
+            messages[to(c)]?.[messages[to(c)]?.length - 1].type === "image"
+              ? "Photo"
+              : messages[to(c)]?.[messages[to(c)]?.length - 1]?.text}
           </ChatItem>
         </div>
       ))}

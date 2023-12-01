@@ -169,7 +169,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 
 .primary_button {
-    width: 120px;
+    /* Was width!!  */
+    max-width: 120px;
     padding: 10px 25px;
     border-radius: 10px;
     background-color: #2a9dd5;
@@ -333,4 +334,52 @@ input[type="range"]::-webkit-slider-thumb {
     transform: scale(0.2);
     opacity: 0;
     visibility: hidden;
+}
+
+@media (max-width: 1440px){
+    .app_range_title{
+        font-size: 20px;
+    }
+    
+    input[type="range"]::-webkit-slider-runnable-track {
+        height: 5px;
+    }
+
+    .app_checkbox_inner_circle{
+        width: 8px;
+        height: 8px;
+    }
+
+    
+    .app_checkbox_title{
+        font-size: 20px;
+    }
+    
+    .app_checkbox_decription{
+        font-size: 16px;
+    }
+    
+    .app_radio_title {
+        font-size: 20px;
+    }
+    
+    .primary_button {
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+    
+
+    
+    .app_notification_icon{
+
+        font-size: 17px;
+
+    }
+    
+    
+    
+    
+    .app_notification_message{
+        font-size: 18px;
+    }
 }

@@ -3,12 +3,15 @@ import { SettingsOptionType } from "../types";
 import store from "../store/store";
 import SettingsOptionsList from "./SettingsOptionsList";
 import UserAvatar from "./UserAvatar";
+import { useTranslation } from "react-i18next";
 const SettingsInfo = observer(function () {
+  const { t } = useTranslation();
+
   const settingsOptions: SettingsOptionType[] = [
     {
       title: store.user?.email ?? "Uknown",
       icon: "fa-regular fa-envelope",
-      description: "Your email",
+      description: t("Your email"),
       action() {
         navigator.clipboard.writeText(store.user?.email || "").then(() => {
           store.setNotificationMessage("Email is copied!");
@@ -18,7 +21,7 @@ const SettingsInfo = observer(function () {
     {
       title: store.user?.userId ?? "Uknown",
       icon: "fa-regular fa-user",
-      description: "User ID",
+      description: t("User ID"),
       action() {
         navigator.clipboard.writeText(store.user?.userId || "").then(() => {
           store.setNotificationMessage("User ID is copied!");

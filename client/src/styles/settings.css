@@ -70,3 +70,35 @@
     min-height: 100vh;
     background-color: #ebebeb;
 }
+
+
+@media (max-width: 1540px) {
+    .settings_option_icon {
+        font-size: 25px;
+    }
+    .settings_option_text_title{
+        font-size: 18px;
+    }
+    
+    .settings_option_text_description{
+        font-size: 16px;
+    }
+
+    .settings_container_avatar-wrapper{
+        height: 500px;
+    }
+
+}
+
+
+@media (max-width: 1024px){
+    .settings_container_avatar-wrapper{
+        height: 500px;
+    }
+}
+
+@media (max-width: 800px){
+    .settings_container_avatar-wrapper{
+        height: 400px;
+    }
+}

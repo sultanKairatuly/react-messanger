@@ -9,6 +9,7 @@ import $api from "../api";
 import store from "../store/store";
 import UserAvatar from "./UserAvatar";
 import { convertBaseToBlob, getRandomColor } from "../utils";
+import { useTranslation } from "react-i18next";
 
 function SignupCustomization() {
   const [username, setName] = useState("");
@@ -17,6 +18,7 @@ function SignupCustomization() {
   const [nameErrorMessage, setNameErrorMessage] = useState("");
   const [generalErrorMessage, setGeneralErrorMessage] = useState("");
   const navigator = useNavigate();
+  const { t } = useTranslation();
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     setName(e.target.value);
   }
@@ -120,7 +122,7 @@ function SignupCustomization() {
   return (
     <div className="signup_container">
       <div className="signup_form">
-        <h1 className="auth_title">Configure profile</h1>
+        <h1 className="auth_title">{t("configureProfile")}</h1>
         <label htmlFor="login" className="signup_label form_label">
           <div className="signup_label_avatar-wrapper">
             <UserAvatar
@@ -134,17 +136,19 @@ function SignupCustomization() {
             className="change_avatar"
             onClick={requestImageFile}
           >
-            Change
+            {t("change")}
           </PrimaryButton>
         </label>
         <label htmlFor="login" className="signup_label form_label">
-          <h2 className="signup_label_title from_label_title">Your Name: </h2>
+          <h2 className="signup_label_title from_label_title">
+            {t("yourName")}:{" "}
+          </h2>
           <div className="auth_from_input-wrapper">
             <input
               className="auth_form_input"
               value={username}
               onChange={handleNameChange}
-              placeholder="Your name"
+              placeholder={t("yourName")}
               type="text"
             />
           </div>
@@ -162,10 +166,10 @@ function SignupCustomization() {
 
         <div className="signin_link">
           <NavLink className="signin_link_span" to="/signup">
-            Back.
+            {t("back")}
           </NavLink>
         </div>
-        <PrimaryButton onClick={handleSignUpClick}>Finish</PrimaryButton>
+        <PrimaryButton onClick={handleSignUpClick}>{t("finish")}</PrimaryButton>
         <div
           className={
             (generalErrorMessage.length

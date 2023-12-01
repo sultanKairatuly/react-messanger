@@ -53,25 +53,25 @@ export function getRandomColor() {
   }
 
 
-export function formatTimeDate(date: number){
+export function formatTimeDate(date: number, locale: "en" | 'ru' = 'en'){
     const diff = Date.now() - date
     const days = Math.ceil(diff / 1000 / 60 / 60 / 24)
     const yersterday = new Date(new Date().setDate(new Date().getDate()-1))
-    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wendesday', 'Thursday', 'Friday', 'Saturday']
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November']
+    const weekDays = { en: ['Sunday', 'Monday', 'Tuesday', 'Wendesday', 'Thursday', 'Friday', 'Saturday'], ru: ['Воскресенья', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Воскресенье']}
+    const months =  { en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November'] , ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь'] } 
     const day = Number(new Date(date).toLocaleDateString().split('.')[0])
     const month = Number(new Date(date).toLocaleDateString().split('.')[1])
     const year = Number(new Date(date).toLocaleDateString().split('.')[2])
     if(new Date(date).toLocaleDateString() === new Date(Date.now()).toLocaleDateString()){
-        return 'Today'
+        return locale === 'en' ? 'Today' : "Сегодня"
     }else if(new Date(date).toLocaleDateString() === new Date(yersterday).toLocaleDateString()){
-        return 'Yesteday'
+        return locale === "en" ? 'Yesteday' : "Вчера"
     }else if(days <= 7){
-        return `${weekDays[new Date(date).getDay()]}`
+        return `${weekDays[locale][new Date(date).getDay()]}`
     } else if(new Date(Date.now()).getFullYear() === new Date(date).getFullYear()) {
-        return `${months[month - 1]} ${day}`
+        return `${months[locale][month - 1]} ${day}`
     }else{
-        return `${year} ${months[month - 1]} ${day}`
+        return `${year} ${months[locale][month - 1]} ${day}`
     }
 
 }
@@ -94,5 +94,66 @@ export const hasDifference = (
     const years =
       new Date(dateOne).getFullYear() !== new Date(dateTwo).getFullYear();
       return days || years || months ? true : false;
-  };
-  
+};
+
+
+export function compareArrays<T extends unknown[]>(firstObj: Record<string, unknown> | T, secondObj: Record<string, unknown> | T): boolean{
+    if(Array.isArray(firstObj) && Array.isArray(secondObj)){
+        if(firstObj.length !== secondObj.length){
+            return false
+        }
+        for(let i = 0; i < firstObj.length; i++){
+            if(typeof firstObj[i] !== typeof secondObj[i]){
+                return false
+            }else{
+                const firstItem = firstObj[i]
+                const secondItem = secondObj[i]
+                if(Array.isArray(firstItem) && Array.isArray(secondItem)){
+                    return compareArrays(firstItem, secondItem)
+                }else if(typeof firstItem === 'object' &&
+                !Array.isArray(firstItem) &&
+                firstItem !== null &&     typeof secondItem === 'object' &&
+                !Array.isArray(secondItem) &&
+                secondItem !== null){
+                    return compareArrays(firstItem as Record<string, unknown>, secondItem as Record<string, unknown>)
+                }else{
+                    if(firstItem !== secondItem){
+                        return false
+                    }
+                }
+            }
+        }
+    }else if(typeof firstObj === 'object' &&
+    !Array.isArray(firstObj) &&
+    firstObj !== null &&     typeof secondObj === 'object' &&
+    !Array.isArray(secondObj) &&
+    secondObj !== null){
+        if(Object.keys(firstObj).length !== Object.keys(secondObj).length){
+            return false
+        }
+        if(!Object.keys(firstObj).every((e, i) => e === Object.keys(secondObj)[i])){
+            return false
+        }
+
+        for(const key in firstObj){
+            const firstItem = firstObj[key]
+                const secondItem = secondObj[key]
+                if(Array.isArray(firstItem) && Array.isArray(secondItem)){
+                    return compareArrays(firstItem, secondItem)
+                }else if(typeof firstItem === 'object' &&
+                !Array.isArray(firstItem) &&
+                firstItem !== null &&     typeof secondItem === 'object' &&
+                !Array.isArray(secondItem) &&
+                secondItem !== null){
+                    return compareArrays(firstItem as Record<string, unknown>, secondItem as Record<string, unknown>)
+                }else{
+                    if(firstItem !== secondItem){
+                        return false
+                    }
+                }
+        }
+    }else{
+        return false
+    }
+    return true
+}

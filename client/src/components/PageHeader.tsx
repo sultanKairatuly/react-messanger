@@ -49,7 +49,9 @@ function PageHeader({
         >
           <i className="fa-solid fa-arrow-left settings_header-icon"></i>
         </button>
-        <h1 className="settings_header_title">{title}</h1>
+        <h1 className="settings_header_title" style={{ fontSize: "24px" }}>
+          {title}
+        </h1>
       </div>
       {handleEditClick && dropdownItems && (
         <div className="settings_header_tail">

@@ -6,6 +6,7 @@ import { ChatPageContext } from "./ChatPage";
 import UserAvatar from "./UserAvatar";
 import SettingsOptionsList from "./SettingsOptionsList";
 import store from "../store/store";
+import { useTranslation } from "react-i18next";
 
 type UserInfo = {
   setIsUserInfo: Dispatch<SetStateAction<boolean>>;
@@ -15,12 +16,13 @@ const UserInfo = observer(function UserInfo({
   setIsUserInfo,
   style,
 }: UserInfo) {
+  const { t, i18n } = useTranslation();
   const { chat } = useContext(ChatPageContext);
   const userInfoOptions = useMemo(() => {
     const bioOption = {
       title: chat.bio,
       icon: "fa-solid fa-circle-info",
-      description: "Info",
+      description: t("Info"),
       action() {},
     };
     if (chat.type === "contact") {
@@ -38,7 +40,7 @@ const UserInfo = observer(function UserInfo({
         {
           title: chat.userId ?? "Uknown",
           icon: "fa-solid fa-user",
-          description: "User ID",
+          description: t("userId"),
           action() {
             navigator.clipboard.writeText(store.user?.userId || "").then(() => {
               store.setNotificationMessage("User ID is copied!");
@@ -53,7 +55,7 @@ const UserInfo = observer(function UserInfo({
     } else {
       return [bioOption];
     }
-  }, [chat]);
+  }, [chat, i18n.language]);
   return (
     <div className="user_info_container" style={style}>
       <UserInfoHeader setIsUserInfo={setIsUserInfo} />

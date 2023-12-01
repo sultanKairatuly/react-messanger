@@ -45,23 +45,17 @@ registerRoute("POST", "/login", async (req, res) => {
     if (isLoginUser(user)) {
       const candidate = await userCollection.findOne({ email: user.email });
       if (!candidate) {
-        res.statusCode = 409;
-        res.statusMessage = "Not authorized";
         return { type: "error", message: "Not authorized" };
       } else {
-        const clone = await userCollection.findOne({ email: user.email });
-        if (clone.password !== user.password) {
-          res.statusCode = 405;
-          res.statusMessage = "Credentials mismatch";
+        if (candidate.password !== user.password) {
           return { type: "error", message: "Credential mismatch" };
         }
         res.statusCode = 200;
         res.statusMessage = "OK";
-        return clone;
+        return candidate;
       }
     } else {
-      res.statusCode = 405;
-      res.statusMessage = "Bad request!";
+      return { type: "error", message: "Unexpected error" };
     }
   } catch (e) {
     console.log("An error occured: ");
@@ -280,7 +274,6 @@ registerRoute("POST", "/update-user", async (req, res) => {
 registerRoute("GET", "/chat", async (req) => {
   const { chatId } = req.query;
   let response = {};
-  console.log("chat!", chatId);
   const data = await chatCollection.findOne({ chatId });
 
   if (data?.type === "contact") {
@@ -319,13 +312,14 @@ registerRoute("POST", "/create-messages", async (req, res) => {
 });
 
 registerRoute("GET", "/messages", async (req, res) => {
-  const { chatId } = req.query;
+  const { chatId, page } = req.query;
   const response = await client
     .db("messages")
     .collection(chatId)
     .find({})
     .toArray();
-  return response;
+  response.sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
+  return response.slice(0, page * 25);
 });
 
 registerRoute("POST", "/update-user-wallpapers", async (req, res) => {
@@ -401,7 +395,6 @@ registerRoute("POST", "/leave-group", async (req) => {
 
 registerRoute("POST", "/send-message", async (req) => {
   const { to, user1, user2, message, type, socketId } = req.body;
-  console.log("Message!:", message);
   if (type === "group") {
     await client
       .db("messages")
@@ -429,7 +422,7 @@ registerRoute("POST", "/send-message", async (req) => {
       .find({})
       .toArray();
     const chat = await userCollection.findOne({ userId: user1 });
-    const notifyText = message.type === 'image' ? 'Photo' : message.text
+    const notifyText = message.type === "image" ? "Photo" : message.text;
     if (!message.author.chats.includes(user2)) {
       await Promise.all([
         userCollection.updateOne(
@@ -568,32 +561,6 @@ registerRoute("POST", "/connect", (req) => {
   });
 });
 
-function sendNotifications(subscriptions) {
-  const notification = JSON.stringify({
-    title: "Hello, Notifications!",
-    options: {
-      body: `ID: ${Math.floor(Math.random() * 100)}`,
-    },
-  });
-  const options = {
-    TTL: 10000,
-  };
-  subscriptions.forEach((subscription) => {
-    const endpoint = subscription.endpoint;
-    const id = endpoint.substr(endpoint.length - 8, endpoint.length);
-    webpush
-      .sendNotification(subscription, notification, options)
-      .then((result) => {
-        console.log(`Endpoint ID: ${id}`);
-        console.log(`Result: ${result.statusCode}`);
-      })
-      .catch((error) => {
-        console.log(`Endpoint ID: ${id}`);
-        console.log(`Error: ${error} `);
-      });
-  });
-}
-
 async function createChat(chat) {
   await chatCollection.insertOne(chat);
 }
@@ -681,6 +648,7 @@ io.on("connection", (socket) => {
       createdAt: Date.now(),
       type: "system",
     };
+    console.log("Jointer User Id: ", joiner.userId);
     await userCollection.updateOne(
       { userId: joiner.userId },
       { $push: { chats: chatId } }
@@ -691,7 +659,6 @@ io.on("connection", (socket) => {
         { $push: { members: { role: "member", userId: joiner.userId } } }
       );
     }
-
     await client.db("messages").collection(chatId).insertOne(systemMessage);
     const messagesPromise = client
       .db("messages")
@@ -711,7 +678,6 @@ io.on("connection", (socket) => {
       id: chatId,
     });
     io.to(joiner.userId).emit("update-chat", chat);
-    io.to(joiner.userId).emit("update-user", user);
   });
 });
 server.listen(PORT || 5000, () => {

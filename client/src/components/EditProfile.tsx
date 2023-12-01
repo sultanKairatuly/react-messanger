@@ -9,6 +9,7 @@ import $api from "../api";
 import { userPredicate } from "../types";
 import Loader from "./Loader";
 import UserAvatar from "./UserAvatar";
+import { useTranslation } from "react-i18next";
 
 function EditProfile() {
   const [userName, setUserName] = useState(store.user?.name || "");
@@ -17,6 +18,7 @@ function EditProfile() {
   const [userAvatar, setUserAvatar] = useState(store.user?.avatar || "");
   const [changed, setChanged] = useState(false);
   const [loader, setLoader] = useState(false);
+  const { t } = useTranslation();
 
   function handleBackClick() {
     store.edit = false;
@@ -80,7 +82,7 @@ function EditProfile() {
 
   return (
     <div className="edit_profile">
-      <PageHeader title="Edit Profile" handleBackClick={handleBackClick} />
+      <PageHeader title={t("Edit Profile")} handleBackClick={handleBackClick} />
       {loader && <Loader />}
       <div className=" edit_profile_container">
         <div className="first_section">
@@ -97,7 +99,7 @@ function EditProfile() {
               changeHandler={(e) =>
                 handleUserChange({ e, fn: setUserName, type: "change" })
               }
-              labelTitle="Name: "
+              labelTitle={t("name")}
               labelFor="name"
             />
           </div>
@@ -107,15 +109,15 @@ function EditProfile() {
               changeHandler={(e) =>
                 handleUserChange({ e, fn: setBio, type: "change" })
               }
-              labelTitle="Bio: "
+              labelTitle={t("bio")}
               labelFor="bio"
             />
           </div>
 
           <p className="edit_profile_paragraph">
-            Any details such as age, occupation or city.
+            {t("bioDescription1")}
             <br />
-            Example: 23 y.o. designer from San Francisco
+            {t("bioDescription2")}
           </p>
         </div>
         <div className="second_section">
@@ -125,21 +127,19 @@ function EditProfile() {
               changeHandler={(e) =>
                 handleUserChange({ e, fn: setUserId, type: "change" })
               }
-              labelTitle="User ID: "
+              labelTitle={t("userId")}
               labelFor="user id"
             />
           </div>
           <p className="edit_profile_paragraph">
-            You can choose a username on{" "}
-            <b className="edit_profile_bold">our web app</b> If you do, people
-            will be able to find you by this username and contact you without
-            needing your phone number.
+            {t("UserIDDescription1")}
+            <b className="edit_profile_bold"> {t("UserIDDescription2")}</b>{" "}
+            {t("UserIDDescription3")}
             <br />
             <br />
-            You can use <b className="edit_profile_bold">a-z</b>,{" "}
-            <b className="edit_profile_bold">0-9</b> and underscores. Minimum
-            length is <b className="edit_profile_bold">5</b>, This link opens a
-            chat with you:
+            {t("UserIDDescription4")} <b className="edit_profile_bold">a-z</b>,
+            <b className="edit_profile_bold">0-9</b> {t("UserIDDescription5")}{" "}
+            <b className="edit_profile_bold">5</b>, {t("UserIDDescription6")}
             <br />
             {`http://localhost:5000/${store.user?.userId}`}
           </p>
@@ -152,7 +152,7 @@ function EditProfile() {
             }
           >
             <AppButton styles={{ marginTop: "20px" }} onClick={handleSaveClick}>
-              Save
+              {t("save")}
             </AppButton>
           </div>
         </div>

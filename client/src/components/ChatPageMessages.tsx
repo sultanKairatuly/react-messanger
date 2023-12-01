@@ -23,14 +23,15 @@ import { socket } from "../socket";
 import { useParams } from "react-router-dom";
 import ForwardMessage from "./ForwardMessage";
 import ChatPageMessage from "./ChatPageMessage";
-import { formatTimeDate } from "../utils";
-import { hasDifference } from "../utils";
+import { formatTimeDate, hasDifference } from "../utils";
 import { createPortal } from "react-dom";
 import SearchMessages from "./SearchMessages";
 import store from "../store/store";
 import { v4 as uuidv4 } from "uuid";
 import { ChatPageContext } from "./ChatPage";
 import GrayMenu from "./GrayMenu";
+import ChatPageFooterSearch from "./ChatPageFooterSearch";
+import { useTranslation } from "react-i18next";
 
 const keys = { 37: 1, 38: 1, 39: 1, 40: 1 };
 
@@ -96,6 +97,7 @@ type ChatPageMessagesProps = {
   setReplyMessage: Dispatch<
     SetStateAction<ReplyMessage["replyMessage"] | null>
   >;
+  footerSearchContainer: HTMLDivElement | null;
 };
 function groupMessages(messages: Message[]) {
   const d: Message[][] = [];
@@ -132,31 +134,22 @@ const ChatPageMessages = observer(function ChatPageMessages({
   isSearchMessages,
   containerRef,
   setReplyMessage,
+  footerSearchContainer,
 }: ChatPageMessagesProps) {
   const { chatId } = useParams();
   const [contextMenu, setContextMenu] = useState<string>("");
-
   const [contextPosition, setContexPosition] = useState({ x: 0, y: 0 });
   const [messages, setMessages] = useState<Message[]>([]);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const { i18n } = useTranslation();
+  const page = useMemo(
+    () => (messages.length === 0 ? 1 : Math.ceil(messages.length / 25)),
+    [messages]
+  );
+
   const groupedMessages = useMemo(() => {
     return groupMessages(messages);
   }, [messages]);
-  useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      const target = e.target;
-      if (target instanceof HTMLElement) {
-        if (!target.closest(".context_menu_wrapper")) {
-          setContextMenu("");
-          enableScroll();
-        }
-      }
-    };
-    document.addEventListener("click", onClickOutside);
-
-    return () => {
-      document.removeEventListener("click", onClickOutside);
-    };
-  }, []);
   const context = useContext(ChatPageContext);
   const renderMessageContextMenu = useCallback(
     (message: Message) => {
@@ -167,13 +160,14 @@ const ChatPageMessages = observer(function ChatPageMessages({
           icon: "fa-solid fa-reply",
           id: uuidv4(),
           action(message) {
+            console.log("Replying message: ", message);
             if (
               textMessagePredicate(message) ||
               imageMessagePredicate(message)
             ) {
               setReplyMessage(message);
             } else if (replyMessagePredicate(message)) {
-              setReplyMessage(message.replyMessage);
+              setReplyMessage(message);
             }
             setContextMenu("");
             enableScroll();
@@ -272,7 +266,6 @@ const ChatPageMessages = observer(function ChatPageMessages({
     },
     [contextMenu]
   );
-
   useEffect(() => {
     socket.on("update-messages", async ({ data, id }) => {
       const equal =
@@ -280,19 +273,17 @@ const ChatPageMessages = observer(function ChatPageMessages({
         JSON.stringify(data).split("").sort().join();
       if (data && to === id && !equal) {
         setMessages(data);
+        localStorage.setItem(to, JSON.stringify(data));
       }
     });
 
     socket.on("notify", async (data) => {
       let notification: Notification | null = null;
       function sendNotification() {
-        // Check if there is an existing notification
         if (notification) {
           notification.close();
-          // Notification is already open, do nothing
           return;
         }
-        // Request permission if not granted
         if (Notification.permission !== "granted") {
           Notification.requestPermission().then(function (permission) {
             if (permission === "granted") {
@@ -300,43 +291,72 @@ const ChatPageMessages = observer(function ChatPageMessages({
             }
           });
         } else {
-          // Permission already granted
           createNotification();
         }
       }
 
       function createNotification() {
-        // Create and show the notification
         notification = new Notification(data.chat.name, {
           body: data.text,
         });
-
-        // You can add additional logic or event listeners here if needed
       }
       if (store.webNotifications && data) {
         sendNotification();
       }
     });
 
-    () => {
+    const handleWindowResize = (e: UIEvent) => {
+      if (
+        e.target &&
+        "innerWidth" in e.target &&
+        typeof e.target.innerWidth === "number"
+      ) {
+        setWindowWidth(e.target.innerWidth);
+      }
+    };
+    const onClickOutside = (e: MouseEvent) => {
+      const target = e.target;
+      if (target instanceof HTMLElement) {
+        if (!target.closest(".context_menu_wrapper")) {
+          setContextMenu("");
+          enableScroll();
+        }
+      }
+    };
+    document.addEventListener("click", onClickOutside);
+    window.addEventListener("resize", handleWindowResize);
+
+    const objDiv = document.querySelector(".chat_page_messages")!;
+    objDiv.scrollTo({
+      top: objDiv.scrollHeight,
+    });
+    return () => {
       socket.off("update-messages");
+      window.removeEventListener("resize", handleWindowResize);
       socket.off("notify");
+      document.removeEventListener("click", onClickOutside);
     };
   }, []);
 
   useEffect(() => {
     async function fetchMessages() {
-      const { data } = await $api(`/messages?chatId=${to}`);
-      console.log(messages);
+      const { data } = await $api(`/messages?chatId=${to}&page=${page}`);
       setMessages(data);
     }
-    fetchMessages();
-  }, [chatId, chat]);
 
+    fetchMessages();
+  }, [chatId, chat, page]);
+
+  const fetchMoreMessages = async (newPage: number) => {
+    const { data } = await $api(`/messages?chatId=${to}&page=${newPage}`);
+    setMessages(data);
+    console.log(data);
+  };
   return (
     <>
       <ForwardMessage />
       {containerRef &&
+        windowWidth > 500 &&
         createPortal(
           <SearchMessages
             messages={messages}
@@ -346,6 +366,11 @@ const ChatPageMessages = observer(function ChatPageMessages({
             }}
           />,
           containerRef as Element
+        )}
+      {footerSearchContainer &&
+        createPortal(
+          <ChatPageFooterSearch messages={messages} />,
+          footerSearchContainer
         )}
       <div
         className="chat_page_messages"
@@ -369,28 +394,35 @@ const ChatPageMessages = observer(function ChatPageMessages({
                   className={msgsArr[0]?.createdAt ? "message_date" : ""}
                 >
                   {msgsArr[0]?.createdAt &&
-                    formatTimeDate(msgsArr[0]?.createdAt)}
+                    formatTimeDate(
+                      msgsArr[0]?.createdAt,
+                      i18n.language as "ru" | "en"
+                    )}
                 </div>
-                {msgsArr.map((e) => {
+                {msgsArr.map((e, i) => {
                   return (
-                    <ChatPageMessage
-                      messages={messages}
-                      key={e.id}
-                      message={e}
-                      setContextMenu={setContextMenu}
-                      setContexPosition={setContexPosition}
-                      contextMenu={contextMenu}
-                      contextPosition={contextPosition}
-                      enableScroll={enableScroll}
-                      disableScroll={disableScroll}
-                      to={to}
-                      chatId={chatId || ""}
-                      setSelectedMessages={setSelectedMessages}
-                      isSelectedMessages={isSelectedMessages}
-                      selectedMessages={selectedMessages}
-                      chat={chat}
-                      renderMessageContextMenu={renderMessageContextMenu}
-                    />
+                    <div id="chat_page_message_container" key={e.id}>
+                      <ChatPageMessage
+                        messages={messages}
+                        i={i}
+                        message={e}
+                        setContextMenu={setContextMenu}
+                        setContexPosition={setContexPosition}
+                        contextMenu={contextMenu}
+                        contextPosition={contextPosition}
+                        fetchMoreMessages={fetchMoreMessages}
+                        enableScroll={enableScroll}
+                        disableScroll={disableScroll}
+                        to={to}
+                        messages={messages}
+                        chatId={chatId || ""}
+                        setSelectedMessages={setSelectedMessages}
+                        isSelectedMessages={isSelectedMessages}
+                        selectedMessages={selectedMessages}
+                        chat={chat}
+                        renderMessageContextMenu={renderMessageContextMenu}
+                      />
+                    </div>
                   );
                 })}
               </div>

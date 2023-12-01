@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   Dispatch,
+  useRef,
   SetStateAction,
 } from "react";
 import GrayMenu from "./GrayMenu";
@@ -19,10 +20,13 @@ import { useParams } from "react-router-dom";
 import { socket } from "../socket";
 import { defineUserStatus } from "../utils";
 import UserAvatar from "./UserAvatar";
+import ChatPageHeaderSearch from "./ChatPageHeaderSearch";
+import { useTranslation } from "react-i18next";
 
 type ChatPageHeadeProps = {
   chat: Chat;
   setIsUserInfo: Dispatch<SetStateAction<boolean>>;
+  setSearchingPattern: Dispatch<SetStateAction<string>>;
 };
 
 const ChatPageHeader = observer(function ChatPageHeader({
@@ -34,7 +38,27 @@ const ChatPageHeader = observer(function ChatPageHeader({
   const [isMenu, setIsMenu] = useState(false);
   const [isDeleteModal, setIsDeleteMenu] = useState(false);
   const { chatId } = useParams();
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const inputRef = useRef<null | HTMLInputElement>(null);
+  const { t, i18n } = useTranslation();
+
   useEffect(() => {
+    setTimeout(() => {
+      console.log(inputRef.current);
+      inputRef.current?.focus();
+    }, 1000);
+    function handleWindowResize(e: UIEvent) {
+      if (
+        e.target &&
+        "innerWidth" in e.target &&
+        typeof e.target.innerWidth === "number"
+      ) {
+        setWindowWidth(e.target.innerWidth);
+      }
+    }
+
+    window.addEventListener("resize", handleWindowResize);
+
     socket.on("typing", (data: unknown) => {
       if (userPredicate(data)) {
         const candidate = typing.find((i) => i.userId === data.userId);
@@ -55,12 +79,14 @@ const ChatPageHeader = observer(function ChatPageHeader({
 
     return () => {
       socket.off("typing");
+      socket.off("stopped-typing");
+      window.removeEventListener("resize", handleWindowResize);
     };
   }, []);
   const firstItem = useMemo(() => {
     if (store.user?.blockedContacts.includes(context.chatId)) {
       return {
-        title: "Unblock user",
+        title: t("unblockUser"),
         icon: "fa-regular fa-user",
         id: uuidv4(),
         action: async () => {
@@ -77,7 +103,7 @@ const ChatPageHeader = observer(function ChatPageHeader({
       };
     } else {
       return {
-        title: "Block user",
+        title: t("blockUser"),
         icon: "fa-regular fa-hand",
         id: uuidv4(),
         action: async () => {
@@ -93,11 +119,11 @@ const ChatPageHeader = observer(function ChatPageHeader({
         },
       };
     }
-  }, [store.user?.blockedContacts]);
+  }, [store.user?.blockedContacts, i18n.language]);
   const secondItem = useMemo(() => {
     if (store.user?.mutedContacts.includes(context.chatId)) {
       return {
-        title: "Unmute user",
+        title: t("unmute"),
         icon: "fa-regular fa-bell",
         id: uuidv4(),
         action: async () => {
@@ -113,7 +139,7 @@ const ChatPageHeader = observer(function ChatPageHeader({
       };
     } else {
       return {
-        title: "Mute",
+        title: t("Mute"),
         icon: "fa-regular fa-bell-slash",
         id: uuidv4(),
         action: async () => {
@@ -128,7 +154,7 @@ const ChatPageHeader = observer(function ChatPageHeader({
         },
       };
     }
-  }, [store.user?.mutedContacts]);
+  }, [store.user?.mutedContacts, i18n.language]);
   const items: GrayMenuItemType[] = useMemo(
     () =>
       userPredicate(chat)
@@ -136,13 +162,13 @@ const ChatPageHeader = observer(function ChatPageHeader({
             firstItem,
             secondItem,
             {
-              title: "Video Call",
+              title: t("videoCall"),
               icon: "fa-solid fa-video",
               id: uuidv4(),
               action: () => {},
             },
             {
-              title: "Delete Chat",
+              title: t("deleteChat"),
               icon: "fa-solid fa-trash",
               id: uuidv4(),
               action: async () => {
@@ -153,7 +179,7 @@ const ChatPageHeader = observer(function ChatPageHeader({
         : [
             secondItem,
             {
-              title: "Leave chat",
+              title: t("leaveChat"),
               icon: "fa-solid fa-person-walking-arrow-right",
               id: uuidv4(),
               action: async () => {
@@ -173,9 +199,8 @@ const ChatPageHeader = observer(function ChatPageHeader({
               },
             },
           ],
-    [chat]
+    [chat, i18n.language]
   );
-
   const deleteForMe = useCallback(
     async function () {
       $api.post(
@@ -201,106 +226,132 @@ const ChatPageHeader = observer(function ChatPageHeader({
     },
     [chatId]
   );
+
   return (
     <>
-      <div className="chat_page_header">
-        <AppModal isModal={isDeleteModal} setModal={setIsDeleteMenu}>
-          <div className="chat_page_delete_modal">
-            <h4
-              className="chat_page_delete_option"
-              onClick={() => deleteForMe()}
-            >
-              Delete only for me
-            </h4>
-            <h4
-              className="chat_page_delete_option"
-              onClick={() => deleteForBoth()}
-            >
-              Delete also for {chat.name}
-            </h4>
-            <h4
-              className="chat_page_delete_option-blue chat_page_delete_option"
-              onClick={() => setIsDeleteMenu(false)}
-            >
-              Cancel
-            </h4>
-          </div>
-        </AppModal>
-        <div
-          className="chat_page_header_head"
-          onClick={() => {
-            setIsUserInfo(true);
-            context.setIsSearchMessages(false);
-          }}
-        >
-          <div className="avatar_double">
-            <div className="chat_page_header_avatar_wrapper">
-              <UserAvatar
-                url={chat.avatar}
-                name={chat.name}
-                color={chat.randomColor}
-              />
-            </div>
-            {userPredicate(chat) && chat.lastSeen === 0 && (
-              <div className="online-point"></div>
-            )}
-          </div>
-
-          <div className="chat_page_header_text">
-            <h2 className="chat_page_header_title">{chat.name}</h2>
-            {!typing.length && chat.name !== "Saved Messages" && (
-              <div
-                className={
-                  userPredicate(chat) && chat.lastSeen === 0 ? "online" : ""
-                }
+      {context.isSearchMessages && windowWidth < 500 ? (
+        <ChatPageHeaderSearch />
+      ) : (
+        <div className="chat_page_header">
+          <AppModal isModal={isDeleteModal} setModal={setIsDeleteMenu}>
+            <div className="chat_page_delete_modal">
+              <h4
+                className="chat_page_delete_option"
+                onClick={() => deleteForMe()}
               >
-                {userPredicate(chat)
-                  ? defineUserStatus(chat.lastSeen)
-                  : `${chat.members.length} members`}
-              </div>
-            )}
-            {typing.length > 0 && chat.name !== "Saved Messages" && (
-              <div className="typing_container">
-                <div className="typing_animation_container">
-                  <div className="typing_animation"></div>
-                  <div className="typing_animation"></div>
-                  <div className="typing_animation"></div>
+                {t("deleteOnlyForMe")}
+              </h4>
+              <h4
+                className="chat_page_delete_option"
+                onClick={() => deleteForBoth()}
+              >
+                {t("deleteAlso")} {chat.name}
+              </h4>
+              <h4
+                className="chat_page_delete_option-blue chat_page_delete_option"
+                onClick={() => setIsDeleteMenu(false)}
+              >
+                {t("cancel")}
+              </h4>
+            </div>
+          </AppModal>
+          <div className="chat_page_header_head">
+            <button
+              onClick={() => (store.isSidebar = !store.isSidebar)}
+              className={
+                (store.isSidebar
+                  ? "sidebar_control_btn_active"
+                  : "sidebar_control_btn_inactive") + " sidebar_control_btn"
+              }
+              style={{
+                display: windowWidth < 1024 ? "flex" : "none",
+              }}
+            >
+              <span className="sidebar_control_btn_bar"></span>
+              <span className="sidebar_control_btn_bar"></span>
+              <span className="sidebar_control_btn_bar"></span>
+            </button>
+            <div
+              className="clickable_header"
+              onClick={() => {
+                setIsUserInfo(true);
+                context.setIsSearchMessages(false);
+              }}
+            >
+              <div className="avatar_double">
+                <div className="chat_page_header_avatar_wrapper">
+                  <UserAvatar
+                    url={chat.avatar}
+                    name={chat.name}
+                    color={chat.randomColor}
+                  />
                 </div>
-                {typing.map((user) => (
-                  <h3 key={user.userId}>{user.name}</h3>
-                ))}
-                <span>typing</span>
+                {userPredicate(chat) && chat.lastSeen === 0 && (
+                  <div className="online-point"></div>
+                )}
               </div>
-            )}
+              <div className="chat_page_header_text">
+                <h2 className="chat_page_header_title">
+                  {chat.name === "Saved Messages"
+                    ? t("Saved Messages")
+                    : chat.name}
+                </h2>
+                {!typing.length && chat.name !== "Saved Messages" && (
+                  <div
+                    className={
+                      userPredicate(chat) && chat.lastSeen === 0 ? "online" : ""
+                    }
+                  >
+                    {userPredicate(chat)
+                      ? defineUserStatus(chat.lastSeen)
+                      : `${chat.members.length} ${t("membersInGroup")}`}
+                  </div>
+                )}
+                {typing.length > 0 && chat.name !== "Saved Messages" && (
+                  <div className="typing_container">
+                    <div className="typing_animation_container">
+                      <div className="typing_animation"></div>
+                      <div className="typing_animation"></div>
+                      <div className="typing_animation"></div>
+                    </div>
+                    {typing.map((user) => (
+                      <h3 key={user.userId}>{user.name}</h3>
+                    ))}
+                    <span>{t("typing")}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="chat_page_header_tail">
-          <button
-            className="chat_header_tail_button"
-            onClick={() => {
-              context.setIsSearchMessages(true);
-              setIsUserInfo(false);
-            }}
-          >
-            <i className="fa-solid fa-magnifying-glass chat_header_tail_icon"></i>
-          </button>
-          {chat.name !== "Saved Messages" && (
+          <div className="chat_page_header_tail">
             <button
               className="chat_header_tail_button"
-              onClick={() => setIsMenu(!isMenu)}
+              onClick={() => {
+                context.setIsSearchMessages(true);
+                setIsUserInfo(false);
+              }}
             >
-              <i className="fa-solid fa-ellipsis-vertical chat_header_tail_icon"></i>
+              <i className="fa-solid fa-magnifying-glass chat_header_tail_icon"></i>
             </button>
-          )}
-          <GrayMenu
-            isMenu={isMenu}
-            position={{ x: -90, y: 50 }}
-            items={items}
-            message={{} as Message}
-            animationFrom="top right"
-          />
+            {chat.name !== "Saved Messages" && (
+              <button
+                className="chat_header_tail_button"
+                onClick={() => setIsMenu(!isMenu)}
+              >
+                <i className="fa-solid fa-ellipsis-vertical chat_header_tail_icon"></i>
+              </button>
+            )}
+            <GrayMenu
+              isMenu={isMenu}
+              x="right"
+              position={{ x: 0, y: 50 }}
+              items={items}
+              message={{} as Message}
+              animationFrom="top right"
+            />
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 });

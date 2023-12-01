@@ -6,6 +6,7 @@ import { observer } from "mobx-react";
 import { SidebarBurgerMenuItemType } from "../types";
 import SidebarBurgerMenu from "./SidebarBurgerMenu";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 // type DropdownItemDefault = {
 //   type: "default";
@@ -33,8 +34,8 @@ const SidebarHeader = observer(function SidebarHeader({
   setSearchQuery,
   searchQuery,
 }: SidebarHeaderProps) {
-  
-  const navigate = useNavigate()
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   useEffect(() => {
     function cleanup() {
       document.removeEventListener("click", onClickOutside);
@@ -44,7 +45,7 @@ const SidebarHeader = observer(function SidebarHeader({
   }, []);
   const initialDropdownItems: SidebarBurgerMenuItemType[] = [
     {
-      title: "Settings",
+      title: t("Settings"),
       type: "default",
       action() {
         store.settings = true;
@@ -53,16 +54,21 @@ const SidebarHeader = observer(function SidebarHeader({
       id: uuidv4(),
     },
     {
-      title: "Saved Messages",
+      title: t("Saved Messages"),
       type: "default",
       action() {
-        navigate(`/a/${(store.user?.userId + 'savedMessages').split('').sort().join('')}?type=group`)
+        navigate(
+          `/a/${(store.user?.userId + "savedMessages")
+            .split("")
+            .sort()
+            .join("")}?type=group`
+        );
       },
       icon: "fa-regular fa-bookmark",
       id: uuidv4(),
     },
     {
-      title: "Create Groupe",
+      title: t("Create Group"),
       type: "default",
       action() {
         store.newGroup = true;
@@ -144,7 +150,7 @@ const SidebarHeader = observer(function SidebarHeader({
           onChange={handleSearchChange}
           value={searchQuery}
           className="sidebar_header_search"
-          placeholder="Search"
+          placeholder={t("Search")}
         />
         <div
           className="sidebar_header_search_xmark_wrapper"

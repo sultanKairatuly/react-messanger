@@ -1,7 +1,7 @@
 import { observer } from "mobx-react";
 import "../styles/userInfoHeader.css";
 import { Dispatch, SetStateAction } from "react";
-
+import { useTranslation } from "react-i18next";
 
 type UserInfoHeaderProps = {
   setIsUserInfo: Dispatch<SetStateAction<boolean>>;
@@ -9,6 +9,7 @@ type UserInfoHeaderProps = {
 const UserInfoHeader = observer(function ({
   setIsUserInfo,
 }: UserInfoHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="user_info_header">
       <button
@@ -17,7 +18,7 @@ const UserInfoHeader = observer(function ({
       >
         <i className="fa-solid fa-xmark"></i>
       </button>
-      <h2 className="user_info_header_text">User Info</h2>
+      <h2 className="user_info_header_text">{t("userInfo")}</h2>
     </div>
   );
 });

@@ -1,11 +1,13 @@
 import store from "../store/store";
 import { SettingsOptionType } from "../types";
 import SettingsOptionsList from "./SettingsOptionsList";
+import { useTranslation } from "react-i18next";
 
 function SettingsControls() {
+  const { t } = useTranslation()
   const settingsControlsOptions: SettingsOptionType[] = [
     {
-      title: "General Settings",
+      title: t("General Settings"),
       icon: "fa-solid fa-gear",
       action() {
         store.resetAll();
@@ -13,7 +15,7 @@ function SettingsControls() {
       },
     },
     {
-      title: "Notification",
+      title: t("Notifications"),
       icon: "fa-regular fa-bell",
       action() {
         store.resetAll();
@@ -21,7 +23,7 @@ function SettingsControls() {
       },
     },
     {
-      title: "Privacy and Security",
+      title: t("Privacy and Security"),
       icon: "fa-solid fa-lock",
       action() {
         store.resetAll();
@@ -29,7 +31,7 @@ function SettingsControls() {
       },
     },
     {
-      title: "Language",
+      title: t("language"),
       icon: "fa-solid fa-earth-africa",
       action() {
         store.resetAll();
@@ -37,7 +39,7 @@ function SettingsControls() {
       },
     },
     {
-      title: "FAQ",
+      title: t("FAQ"),
       icon: "fa-solid fa-question",
       action() {
         store.resetAll();

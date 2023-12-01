@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction } from "react";
+import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 
 type SidebarSearchTabProps = {
@@ -9,15 +10,17 @@ function SidebarSearchTab({
   activeComponent,
   setActiveComponent,
 }: SidebarSearchTabProps) {
+  const { t } = useTranslation();
+
   const tabs = [
     {
       id: uuidv4(),
-      title: "Chats",
+      title: t("chats"),
       component: "SidebarChatSearch",
     },
     {
       id: uuidv4(),
-      title: "Groups",
+      title: t("groups"),
       component: "SidebarGroupSearch",
     },
   ];

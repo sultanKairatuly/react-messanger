@@ -12,20 +12,34 @@ import { userPredicate } from "../types";
 export const AppContext = createContext({});
 const MainLayout = observer(function MainLayout() {
   const [resizing, setResizing] = useState(false);
-  const [sidebarContainerWidth, setSidebarContainerWidth] = useState(1000);
+  const [sidebarContainerWidth, setSidebarContainerWidth] = useState(700);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const container = useRef<HTMLDivElement | null>(null);
-  socket.on("update-user", (data) => {
-    if (userPredicate(data)) {
-      store.setUser(data);
-    }
-  });
 
   useEffect(() => {
     if (store.user) {
       socket.emit("connectToUserId", store.user.userId);
       socket.emit("connectToGroups", store.user.chats);
     }
-    console.log("rendered");
+
+    socket.on("update-user", (data) => {
+      console.log("USER DATA: ", data);
+      if (userPredicate(data)) {
+        store.setUser(data);
+      }
+    });
+    const handleWindowResize = (e: UIEvent) => {
+      if (
+        e.target &&
+        "innerWidth" in e.target &&
+        typeof e.target.innerWidth === "number"
+      ) {
+        setWindowWidth(e.target.innerWidth);
+      }
+    };
+
+    window.addEventListener("resize", handleWindowResize);
+
     return () => {
       socket.disconnect();
       socket.off("update-user");
@@ -33,7 +47,14 @@ const MainLayout = observer(function MainLayout() {
   }, []);
 
   useEffect(() => {
-    console.log("resizing: ", resizing);
+    if (windowWidth < 500) {
+      setSidebarContainerWidth(100);
+      console.log(store.isSidebar);
+      console.log("===================");
+    }
+  }, [windowWidth]);
+
+  useEffect(() => {
     function handleResizeMouseMove(
       e: React.MouseEvent<HTMLDivElement, MouseEvent>
     ) {
@@ -41,8 +62,6 @@ const MainLayout = observer(function MainLayout() {
         requestAnimationFrame(() => {
           setSidebarContainerWidth(e.clientX);
         });
-        // setSidebarContainerWidth(e.clientX);
-        console.log(e.clientX);
       }
     }
 
@@ -50,10 +69,12 @@ const MainLayout = observer(function MainLayout() {
       setResizing(() => false);
     }
 
-    window.addEventListener("mousemove", handleResizeMouseMove);
+    //! КОСТЫЛЬ !!! ИСПРАВИТЬ КОГДА НЕ БУДЕТ ЛЕНЬ
+
+    window.addEventListener("mousemove", () => handleResizeMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener("mousemove", handleResizeMouseMove);
+      window.removeEventListener("mousemove", () => handleResizeMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [resizing, sidebarContainerWidth, container]);
@@ -72,7 +93,11 @@ const MainLayout = observer(function MainLayout() {
             setResizing(() => false);
           }}
           style={{
-            width: `${sidebarContainerWidth}px`,
+            width: store.isSidebar
+              ? `${sidebarContainerWidth}${windowWidth < 500 ? "%" : "px"}`
+              : "0px",
+            minWidth: store.isSidebar ? `250px` : "0px",
+            maxWidth: windowWidth < 500 ? "1000px" : "400px",
           }}
           ref={container}
         >
@@ -82,9 +107,27 @@ const MainLayout = observer(function MainLayout() {
             onMouseDown={() => setResizing(() => true)}
           ></div>
         </div>
-        <div className="outlet_container">
-          <Outlet></Outlet>
-        </div>
+        {windowWidth < 500 ? (
+          !store.isSidebar ? (
+            <div
+              className="outlet_container"
+              style={{
+                width: windowWidth < 500 ? "0" : "50%",
+              }}
+            >
+              <Outlet></Outlet>
+            </div>
+          ) : null
+        ) : (
+          <div
+            className="outlet_container"
+            style={{
+              width: windowWidth < 500 ? "0" : "50%",
+            }}
+          >
+            <Outlet></Outlet>
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );

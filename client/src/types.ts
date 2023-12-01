@@ -39,7 +39,7 @@ export type GroupChat = {
     chatId: string,
     randomColor: string
 }
-export type ReplyMessage = (Omit<TextMessage, 'type'> | Omit<ImageMessage, 'type'>) & { replyMessage:  TextMessage | Omit<ImageMessage, 'text' | 'imageUrl'> , type: 'reply' }
+export type ReplyMessage = (Omit<TextMessage, 'type'> | Omit<ImageMessage, 'type'>) & { replyMessage:  TextMessage | Omit<ImageMessage, 'text' | 'imageUrl'> | ReplyMessage , type: 'reply'  }
 export type MessageStatus = "pending" | "received" | "read"
 export type Chat = GroupChat | User
 export type MessageType = 'text' | 'image' | 'system' | 'video'
@@ -68,7 +68,7 @@ export type MessageQueryImage = {
 }
 export type MessageQueryReply = {
   type: 'reply',
-  replyingMessage: TextMessage | Omit<ImageMessage, "text" | "imageUrl">
+  replyingMessage: ReplyMessage["replyMessage"]
 } & ({
   dataType: 'text'
 } | { dataType: 'image', imageUrl: string, text: string})

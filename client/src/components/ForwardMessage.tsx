@@ -26,16 +26,23 @@ const ForwardMessage = observer(function ForwardMessages() {
   }, [chats, chatQuery]);
 
   async function forwardMessageToChat(chat: ChatType) {
+    const chatId = userPredicate(chat) ? chat.userId : chat.chatId;
+    const isBlocked = store.user
+      ? store.user.blockedContacts.includes(chatId)
+        ? true
+        : false
+      : true;
+    if (isBlocked) return;
     const promises = [];
     if (store.user) {
       for (const activeMessage of context.activeMessages) {
-        console.log(activeMessage);
         const newMessage = {
           ...activeMessage,
           createdAt: Date.now(),
           id: uuidv4(),
           status: "pending",
-        };
+          author: store.user,
+        } as const;
         const emittingData: EmittingData = {
           to:
             (chat?.type === "contact"

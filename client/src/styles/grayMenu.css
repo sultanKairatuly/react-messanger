@@ -45,7 +45,7 @@
 .gray_menu_head{
     display: flex;
     align-items: center;
-    column-gap: 20px;
+    column-gap: 10px;
 }
 
 .gray_menu_item_icon{
@@ -54,7 +54,7 @@
 }
 
 .gray_menu_item_title{
-    font-size: 16px;
+    font-size: 15px;
     user-select: none;
     
 }

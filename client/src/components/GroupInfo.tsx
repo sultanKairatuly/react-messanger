@@ -16,6 +16,7 @@ import { User, groupChatPredicate, userPredicate } from "../types";
 import $api from "../api";
 import ChatItem from "./ChatItem";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 type GroupInfoProps = {
   style: Record<string, unknown>;
@@ -26,6 +27,7 @@ const GroupInfo = memo(function GroupInfo({
   setIsUserInfo,
   style,
 }: GroupInfoProps) {
+  const { t } = useTranslation();
   const { chat } = useContext(ChatPageContext);
   const [members, setMembers] = useState<
     (User & { role: "member" | "admin" })[]
@@ -34,9 +36,9 @@ const GroupInfo = memo(function GroupInfo({
   const userInfoOptions = useMemo(
     () => [
       {
-        title: chat.bio || "No bio yet.",
+        title: chat.bio || t("noBio"),
         icon: "fa-solid fa-circle-info",
-        description: "Info",
+        description: t("Info"),
         action() {},
       },
     ],
@@ -70,10 +72,15 @@ const GroupInfo = memo(function GroupInfo({
             fontSize="12rem"
           />
         </div>
-        {chat.name === "Saved Messages" ? (
+        {chat.name !== "Saved Messages" ? (
           <>
             <SettingsOptionsList options={userInfoOptions} />
-            <h1 className="members_title">Members</h1>
+            <h1
+              className="members_title"
+              style={{ textTransform: "capitalize" }}
+            >
+              {t("members")}
+            </h1>
             <div className="group_info_members">
               {groupChatPredicate(chat) &&
                 members.map((member) => (
@@ -81,7 +88,7 @@ const GroupInfo = memo(function GroupInfo({
                     className="member"
                     onClick={() => navigate(`/a/${member.userId}`)}
                   >
-                    <ChatItem chat={member} topRightText={member.role} />
+                    <ChatItem chat={member} topRightText={t(member.role)} />
                   </div>
                 ))}
             </div>

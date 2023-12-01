@@ -20,5 +20,16 @@
 .highjlited{
     background-color: #cae3f7;
     padding: 3px;
-    border-radius: 10px;
+}
+
+
+@media (max-width: 1024px){
+    .search_messages{
+        height: 100vh;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 7;
+    }
+    
 }

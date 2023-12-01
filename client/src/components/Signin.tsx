@@ -4,6 +4,7 @@ import "../styles/Signup.css";
 import $api from "../api";
 import store from "../store/store";
 import { User, userPredicate } from "../types";
+import { useTranslation } from "react-i18next";
 
 function Signin() {
   const [login, setLogin] = useState("");
@@ -11,6 +12,7 @@ function Signin() {
   const [isPwt, setIsPwt] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
   function handleLoginChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -37,14 +39,11 @@ function Signin() {
 
   async function handleSignUpClick() {
     if (login.length === 0) {
-      showErrorMessage("Field must be filled!", setLoginErrorMessage);
+      showErrorMessage(t("fieldError"), setLoginErrorMessage);
     } else if (password.length < 5) {
-      showErrorMessage(
-        "Password must have more than 4 symbols!",
-        setPasswordErrorMessage
-      );
+      showErrorMessage(t("pswLengthError"), setPasswordErrorMessage);
     } else if (!login.match(/.+@(gmail.com)|(mail.ru)/gm)) {
-      showErrorMessage("Email must be valid!", setLoginErrorMessage);
+      showErrorMessage(t("emailValidError"), setLoginErrorMessage);
     } else {
       const { data } = await $api.post<
         User | { type: "error"; message: string }
@@ -54,7 +53,6 @@ function Signin() {
           password,
         },
       });
-      console.log(data);
       if (userPredicate(data)) {
         store.setUser(data);
         navigate("/");
@@ -64,7 +62,7 @@ function Signin() {
           case "Not authorized":
             showErrorMessage("Email is not authorized", setLoginErrorMessage);
             break;
-          case "Credentials mismatch":
+          case "Credential mismatch":
             showErrorMessage("Credentials mismatch", setLoginErrorMessage);
             break;
           default:
@@ -77,15 +75,17 @@ function Signin() {
   return (
     <div className="signup_container">
       <div className="signup_form">
-        <h1 className="auth_title">Login</h1>
+        <h1 className="auth_title">{t("login")}</h1>
         <label htmlFor="login" className="signup_label form_label">
-          <h2 className="signup_label_title from_label_title">Your Email: </h2>
+          <h2 className="signup_label_title from_label_title">
+            {t("Your email")}
+          </h2>
           <div className="auth_from_input-wrapper">
             <input
               className="auth_form_input"
               value={login}
               onChange={handleLoginChange}
-              placeholder="Your email"
+              placeholder={t("Your email")}
               type="text"
             />
           </div>
@@ -101,13 +101,15 @@ function Signin() {
           </div>
         </label>
         <label htmlFor="password" className="signup_label form_label">
-          <h2 className="signup_label_title from_label_title">Your password</h2>
+          <h2 className="signup_label_title from_label_title">
+            {t("yourPassword")}
+          </h2>
           <div className="auth_form_input-wrapper">
             <input
               className="auth_form_input"
               value={password}
               onChange={handlePasswordChange}
-              placeholder="Your new password"
+              placeholder={t("yourPassword")}
               type={isPwt ? "text" : "password"}
             />
             <i
@@ -130,13 +132,13 @@ function Signin() {
           </div>
         </label>
         <div className="signin_link">
-          Don't have an account?{" "}
+          {t("dontHave")}{" "}
           <NavLink className="signin_link_span" to="/signup">
-            Sign up then.
+            {t("signup")}
           </NavLink>
         </div>
         <button className="singup_button" onClick={handleSignUpClick}>
-          Sign in
+          {t("signin")}
         </button>
       </div>
     </div>

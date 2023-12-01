@@ -17,6 +17,7 @@ import GrayMenu from "./GrayMenu";
 import AppModal from "./AppModal";
 import AppButton from "./AppButton";
 import ReplyMessage from "./ReplyMessage";
+import { useTranslation } from "react-i18next";
 
 type ChatPageFooterProps = {
   value: string;
@@ -52,6 +53,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
   const [messageImage, setMessageImage] = useState("");
   const [isPhotoModal, setPhotoModal] = useState(false);
   const [imageText, setImageText] = useState("");
+  const { t } = useTranslation();
 
   const tailOptions: (Omit<GrayMenuItemType, "action"> & {
     action: (ev: unknown) => void;
@@ -161,7 +163,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
     <>
       <AppModal setModal={setPhotoModal} isModal={isPhotoModal}>
         <div className="photo_modal">
-          <h1 className="photo_modal_title">Send a Photo</h1>
+          <h1 className="photo_modal_title">{t("sendPhoto")}</h1>
           <div className="photo_modal_image_wrapper">
             {messageImage.includes("image") ? (
               <img
@@ -184,10 +186,6 @@ const ChatPageFooter = observer(function ChatPageFooter({
             <AppButton
               onClick={() => {
                 if (replyMessage) {
-                  console.log(
-                    "Reply Message from Footer Modal: ",
-                    replyMessage
-                  );
                   onMessageSend({
                     type: "reply",
                     replyingMessage: replyMessage,
@@ -213,13 +211,15 @@ const ChatPageFooter = observer(function ChatPageFooter({
           </div>
         </div>
       </AppModal>
-      {isBlocked && (
+      {isBlocked && !isSelectedMessages && (
         <div className="chat_page_footer">
-          <h1 className="blocked_message">
-            {store.user && store.user.blockedContacts.includes(context.chatId)
-              ? "Вы заблокировали этого пользователя"
-              : "Этот пользователь вас заблокировал"}
-          </h1>
+          <div className="chat_page_footer_content">
+            <h1 className="blocked_message">
+              {store.user && store.user.blockedContacts.includes(context.chatId)
+                ? "Вы заблокировали этого пользователя"
+                : "Этот пользователь вас заблокировал"}
+            </h1>
+          </div>
         </div>
       )}
       {!isSelectedMessages && !isBlocked && (
@@ -303,7 +303,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
                 <i className="fa-solid fa-xmark chat_page_button_icon"></i>
               </button>
               <div className="footer_specified_text">
-                {selectedMessages.length} messages selected
+                {selectedMessages.length} {t('messagesSelected')}
               </div>
             </div>
 

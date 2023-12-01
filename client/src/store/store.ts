@@ -21,7 +21,6 @@ type StorePrototype = {
     chatWallpaper: boolean,
     chatWallpaperColors: boolean,
     settings: boolean,
-    savedMessages: boolean,
     notificationMessage: string,
     blured: boolean,
     messageTextSize: number,
@@ -30,6 +29,8 @@ type StorePrototype = {
     resetAll:() => void,
     setUser(payload: User): void,
     setNotificationMessage(message: string, ms?: number): void,
+    isSidebar: boolean,
+    isSearchingMessages: boolean,
 }
 
 const storePrototype: StorePrototype = {
@@ -50,9 +51,10 @@ const storePrototype: StorePrototype = {
     chatWallpaperColors: false,
     settings: false,
     notificationMessage: "",
-    savedMessages: false,
+    isSearchingMessages: false,
     messageTextSize: 16,
     newGroup: false,
+    isSidebar: true,
     webNotifications: localStorage.getItem("webNotifications") == null ?  false : (localStorage.getItem("webNotifications") == 'true' ? true : false),
     setNotificationMessage(message: string, ms: number = 1500){
         this.notificationMessage = message;
@@ -76,3 +78,4 @@ const storePrototype: StorePrototype = {
 const store = makeAutoObservable(storePrototype)
 
 export default store
+

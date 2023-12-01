@@ -6,7 +6,7 @@ import { useState, useMemo } from "react";
 import { getTimeFormatted } from "../utils";
 import store from "../store/store";
 import { observer } from "mobx-react";
-
+import { useTranslation } from "react-i18next";
 
 type SearchMessagesProps = {
   messages: Message[];
@@ -25,6 +25,7 @@ const SearchMessages = observer(function SearchMessages({
   messages,
   style,
 }: SearchMessagesProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const filteredMessages = useMemo(
     () =>
@@ -32,7 +33,8 @@ const SearchMessages = observer(function SearchMessages({
         ? []
         : messages
             .filter((m) => m.text.includes(searchQuery))
-            .filter(textMessagePredicate).sort((a, b) => a.createdAt > b.createdAt ? -1 : 1),
+            .filter(textMessagePredicate)
+            .sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1)),
     [messages, searchQuery]
   );
 
@@ -47,14 +49,14 @@ const SearchMessages = observer(function SearchMessages({
       <div className="search_found_messages">
         {searchQuery &&
           filteredMessages &&
-          filteredMessages.map((message) => (
+          filteredMessages.map((message, idx) => (
             <ChatItem
               topRightText={getTimeFormatted(
                 message.createdAt,
                 store.timeFormat
               )}
               chat={message.author}
-              key={message.id}
+              key={message.id + idx}
               onClick={() => {
                 const messageElement = document.querySelector(
                   `[data-id="${message.id}"]`
@@ -75,13 +77,12 @@ const SearchMessages = observer(function SearchMessages({
             </ChatItem>
           ))}
         {!searchQuery && (
-          <div className="search_messages_text">Search for messages</div>
+          <div className="search_messages_text"> {t("SearchMessages")}</div>
         )}
         {searchQuery && !filteredMessages.length && (
-          <div className="search_messages_text">Couldn't find any messages</div>
+          <div className="search_messages_text">{t("couldntFind")}</div>
         )}
       </div>
-
     </div>
   );
 });

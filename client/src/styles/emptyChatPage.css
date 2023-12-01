@@ -1,6 +1,9 @@
 .empty_chat_page_title{
     font-size: 30px;
-    color: #777;
+    color: #e0e0e0;
+    background-color: rgba(0, 0, 0, 0.514);
+    padding: 10px;
+    border-radius: 10px;
 }
 
 .empty_chat_page_container{
@@ -9,4 +12,31 @@
     width: 100%;
     height: 100%;
     align-items: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+@media (max-width: 1540px) {
+    .empty_chat_page_title{
+        font-size: 26px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .empty_chat_page_title{
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 850px) {
+    .empty_chat_page_title{
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .empty_chat_page_title{
+        font-size: 18px;
+    }
 }

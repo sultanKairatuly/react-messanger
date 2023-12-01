@@ -18,3 +18,9 @@
     column-gap: 20px;
     justify-content: space-between;
 }
+
+@media (max-width: 1024px){
+    .general_settings_section_title{
+        font-size: 22px;
+    }
+}

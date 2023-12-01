@@ -1,4 +1,7 @@
 import "../styles/chatPage.css";
+import $api from "../api";
+import useQuery from "../hooks/useQuery";
+import store from "../store/store";
 import {
   useEffect,
   useState,
@@ -10,7 +13,6 @@ import {
   useMemo,
 } from "react";
 import { useParams } from "react-router-dom";
-import $api from "../api";
 import {
   Message,
   chatPredicate,
@@ -22,19 +24,18 @@ import {
   ReplyMessage,
   MessageQuery,
 } from "../types";
-import useQuery from "../hooks/useQuery";
-import store from "../store/store";
+
 import { v4 as uuidv4 } from "uuid";
 import { observer } from "mobx-react";
-import HiddenLoader from "./HiddenLoader";
 import { EmittingData } from "../types";
-import ChatPageHeader from "./ChatPageHeader";
-import ChatPageMessages from "./ChatPageMessages";
-import ChatPageFooter from "./ChatPageFooter";
 import { socket } from "../socket";
 import _ from "lodash";
 import UserInfo from "./UserInfo";
 import GroupInfo from "./GroupInfo";
+import ChatPageHeader from "./ChatPageHeader";
+import ChatPageMessages from "./ChatPageMessages";
+import ChatPageFooter from "./ChatPageFooter";
+import HiddenLoader from "./HiddenLoader";
 
 const MAX_TEXTAREA_HEIGHT = 250;
 const MIN_TEXTAREA_HEIGHT = 40;
@@ -49,6 +50,8 @@ type ChatPageContextType = {
   setIsSearchMessages: Dispatch<SetStateAction<boolean>>;
   isSearchMessages: boolean;
   chat: Chat;
+  searchingPattern: string;
+  setSearchingPattern: Dispatch<SetStateAction<string>>;
 };
 export const ChatPageContext = createContext({} as ChatPageContextType);
 const ChatPage = observer(function ChatPage() {
@@ -68,11 +71,14 @@ const ChatPage = observer(function ChatPage() {
   const [isForwardMessage, setIsForwardMessage] = useState(false);
   const [activeMessages, setActiveMessages] = useState<Message[]>([]);
   const [isSearchMessages, setIsSearchMessages] = useState(false);
+  const [searchingPattern, setSearchingPattern] = useState("");
   const [replyMessage, setReplyMessage] = useState<
     ReplyMessage["replyMessage"] | null
   >(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const container = useRef<null | HTMLDivElement>(null);
   const timeId = useRef(Infinity);
+  const footerSearchContainer = useRef<null | HTMLDivElement>(null);
   const to = useMemo(() => {
     if (chat) {
       return (
@@ -179,8 +185,20 @@ const ChatPage = observer(function ChatPage() {
         setChat(chat);
       }
     });
+    const handleWindowResize = (e: UIEvent) => {
+      if (
+        e.target &&
+        "innerWidth" in e.target &&
+        typeof e.target.innerWidth === "number"
+      ) {
+        setWindowWidth(e.target.innerWidth);
+      }
+    };
+
+    window.addEventListener("resize", handleWindowResize);
 
     return () => {
+      window.removeEventListener("resize", handleWindowResize);
       socket.off("update-chat");
     };
   }, []);
@@ -258,7 +276,6 @@ const ChatPage = observer(function ChatPage() {
       try {
         setLoader(true);
         const { data } = await $api.get(`/chat?chatId=${chatId}`);
-        console.log("chat data: ", data);
         if (chatPredicate(data)) {
           setChat(data);
           await $api.post(
@@ -299,9 +316,22 @@ const ChatPage = observer(function ChatPage() {
             setIsSearchMessages,
             isSearchMessages,
             chat,
+            searchingPattern,
+            setSearchingPattern,
           }}
         >
-          <div className="chat_page_container2" ref={container}>
+          <div
+            className="chat_page_container2"
+            ref={container}
+            style={{
+              width:
+                windowWidth <= 900 && windowWidth > 500
+                  ? store.isSidebar
+                    ? "200%"
+                    : "100%"
+                  : "100%",
+            }}
+          >
             <div className="chat_page_container">
               {loader && <HiddenLoader />}
               <div
@@ -312,12 +342,17 @@ const ChatPage = observer(function ChatPage() {
                   backgroundImage: `url(/${store.user?.activeChatWallpaper})`,
                 }}
               ></div>
-              <ChatPageHeader chat={chat} setIsUserInfo={setIsUserInfo} />
+              <ChatPageHeader
+                chat={chat}
+                setIsUserInfo={setIsUserInfo}
+                setSearchingPattern={setSearchingPattern}
+              />
               <div className="chat_page_content">
                 <ChatPageMessages
                   type={chat.type}
                   setReplyMessage={setReplyMessage}
                   to={to}
+                  footerSearchContainer={footerSearchContainer.current}
                   isSearchMessages={isSearchMessages}
                   messageText={messageText}
                   isSelectedMessages={isSelectedMessages}
@@ -338,13 +373,54 @@ const ChatPage = observer(function ChatPage() {
                           },
                           joiner: store.user,
                         });
+                        chatId && store.user?.chats.push(chatId);
+                        localStorage.setItem(
+                          "user",
+                          JSON.stringify(store.user)
+                        );
                       }}
                     >
                       JOIN
                     </button>
                   )}
-                {groupChatPredicate(chat) ? (
-                  store.user?.chats.includes(chat.chatId) && (
+                {
+                  <div
+                    ref={footerSearchContainer}
+                    className="chat_page_footer_search_container"
+                    style={{
+                      visibility:
+                        !isSearchMessages || windowWidth > 500
+                          ? "hidden"
+                          : "visible",
+                      opacity: !isSearchMessages || windowWidth > 500 ? 0 : 1,
+                      display:
+                        !isSearchMessages || windowWidth > 500
+                          ? "none"
+                          : "block",
+                    }}
+                  ></div>
+                }
+                {!isSearchMessages ? (
+                  groupChatPredicate(chat) ? (
+                    store.user?.chats.includes(chat.chatId) && (
+                      <ChatPageFooter
+                        setReplyMessage={setReplyMessage}
+                        setSelectedMessages={setSelectedMessages}
+                        isSelectedMessages={isSelectedMessages}
+                        selectedMessages={selectedMessages}
+                        textAreaHeight={textAreaHeight}
+                        setFocused={setFocused}
+                        value={messageText}
+                        onMessageSend={onMessageSend}
+                        replyMessage={replyMessage}
+                        onChange={(e) => {
+                          delayedQuery(e.target.value);
+                          clearTimeout(timeId.current);
+                          setMessageText(e.target.value);
+                        }}
+                      />
+                    )
+                  ) : (
                     <ChatPageFooter
                       setReplyMessage={setReplyMessage}
                       setSelectedMessages={setSelectedMessages}
@@ -353,8 +429,8 @@ const ChatPage = observer(function ChatPage() {
                       textAreaHeight={textAreaHeight}
                       setFocused={setFocused}
                       value={messageText}
-                      onMessageSend={onMessageSend}
                       replyMessage={replyMessage}
+                      onMessageSend={onMessageSend}
                       onChange={(e) => {
                         delayedQuery(e.target.value);
                         clearTimeout(timeId.current);
@@ -362,37 +438,20 @@ const ChatPage = observer(function ChatPage() {
                       }}
                     />
                   )
-                ) : (
-                  <ChatPageFooter
-                    setReplyMessage={setReplyMessage}
-                    setSelectedMessages={setSelectedMessages}
-                    isSelectedMessages={isSelectedMessages}
-                    selectedMessages={selectedMessages}
-                    textAreaHeight={textAreaHeight}
-                    setFocused={setFocused}
-                    value={messageText}
-                    replyMessage={replyMessage}
-                    onMessageSend={onMessageSend}
-                    onChange={(e) => {
-                      delayedQuery(e.target.value);
-                      clearTimeout(timeId.current);
-                      setMessageText(e.target.value);
-                    }}
-                  />
-                )}
+                ) : null}
               </div>
             </div>
             {chat.type === "contact" ? (
               <UserInfo
                 style={{
-                  width: isUserInfo && !isSearchMessages ? "70%" : "0%",
+                  width: isUserInfo && !isSearchMessages ? "100%" : "0%",
                 }}
                 setIsUserInfo={setIsUserInfo}
               />
             ) : (
               <GroupInfo
                 style={{
-                  width: isUserInfo && !isSearchMessages ? "70%" : "0%",
+                  width: isUserInfo && !isSearchMessages ? "100%" : "0%",
                 }}
                 setIsUserInfo={setIsUserInfo}
               />

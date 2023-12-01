@@ -4,6 +4,7 @@ import { ChatPageContext } from "./ChatPage";
 import { DatePicker } from "react-date-picker";
 import "react-date-picker/dist/DatePicker.css";
 import "react-calendar/dist/Calendar.css";
+import { useTranslation } from "react-i18next";
 
 type SearchMessagesHeaderProps = {
   value: string;
@@ -14,6 +15,7 @@ function SearchMessagesHeader({ value, onChange }: SearchMessagesHeaderProps) {
   const [isFocused, setIsFocused] = useState(false);
   const context = useContext(ChatPageContext);
   const [dateValue, setDateValue] = useState(new Date(Date.now()));
+  const { t } = useTranslation();
 
   return (
     <div className="search_messages_header">
@@ -28,7 +30,7 @@ function SearchMessagesHeader({ value, onChange }: SearchMessagesHeaderProps) {
           type="text"
           value={value}
           onChange={onChange}
-          placeholder="Search"
+          placeholder={t("Search")}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           className={
@@ -37,28 +39,30 @@ function SearchMessagesHeader({ value, onChange }: SearchMessagesHeaderProps) {
           }
         />
       </div>
-      <DatePicker
-        closeCalendar={false}
-        onChange={(value) => {
-          if (value instanceof Date) {
-            const messageElement = document.querySelector(
-              `[data-date="${value.toLocaleDateString()}"]`
-            );
-            if (messageElement) {
-              messageElement.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-              messageElement.classList.add("contexed_message");
-              setTimeout(() => {
-                messageElement.classList.remove("contexed_message");
-              }, 1000);
+      <div>
+        <DatePicker
+          closeCalendar={false}
+          onChange={(value) => {
+            if (value instanceof Date) {
+              const messageElement = document.querySelector(
+                `[data-date="${value.toLocaleDateString()}"]`
+              );
+              if (messageElement) {
+                messageElement.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+                messageElement.classList.add("contexed_message");
+                setTimeout(() => {
+                  messageElement.classList.remove("contexed_message");
+                }, 1000);
+              }
+              setDateValue(value as Date);
             }
-            setDateValue(value as Date);
-          }
-        }}
-        value={dateValue}
-      />
+          }}
+          value={dateValue}
+        />
+      </div>
     </div>
   );
 }
