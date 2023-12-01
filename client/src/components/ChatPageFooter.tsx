@@ -53,7 +53,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
   const [messageImage, setMessageImage] = useState("");
   const [isPhotoModal, setPhotoModal] = useState(false);
   const [imageText, setImageText] = useState("");
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const tailOptions: (Omit<GrayMenuItemType, "action"> & {
     action: (ev: unknown) => void;
@@ -103,7 +103,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
   const mediaMenuItems = useMemo<GrayMenuItemType[]>(() => {
     return [
       {
-        title: "Photo or video",
+        title: t("Photo or Video"),
         icon: "fa-regular fa-image",
         id: uuidv4(),
         action: () => {
@@ -128,7 +128,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
         },
       },
       {
-        title: "File",
+        title: t("File"),
         icon: "fa-solid fa-file",
         id: uuidv4(),
         action: () => {
@@ -152,7 +152,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
         },
       },
     ];
-  }, []);
+  }, [i18n.language]);
 
   const isBlocked =
     (store.user && store.user?.blockedContacts.includes(context.chatId)) ||
@@ -178,7 +178,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
           <div className="photo_modal_footer">
             <input
               type="text"
-              placeholder="Add a caption..."
+              placeholder={t("addCaption") + "..."}
               className="photo_modal_footer_input"
               value={imageText}
               onChange={(e) => setImageText(e.target.value)}
@@ -206,7 +206,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
                 setMessageImage("");
               }}
             >
-              Send
+              {t("send")}
             </AppButton>
           </div>
         </div>
@@ -303,7 +303,7 @@ const ChatPageFooter = observer(function ChatPageFooter({
                 <i className="fa-solid fa-xmark chat_page_button_icon"></i>
               </button>
               <div className="footer_specified_text">
-                {selectedMessages.length} {t('messagesSelected')}
+                {selectedMessages.length} {t("messagesSelected")}
               </div>
             </div>
 
