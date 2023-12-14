@@ -1,4 +1,11 @@
-import { Chat, GrayMenuItemType, Message, userPredicate, User } from "../types";
+import {
+  Chat,
+  GrayMenuItemType,
+  Message,
+  userPredicate,
+  User,
+  groupChatPredicate,
+} from "../types";
 import { ChatPageContext } from "./ChatPage";
 import {
   useContext,
@@ -18,7 +25,6 @@ import { observer } from "mobx-react";
 import AppModal from "./AppModal";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
-import { defineUserStatus } from "../utils";
 import UserAvatar from "./UserAvatar";
 import ChatPageHeaderSearch from "./ChatPageHeaderSearch";
 import { useTranslation } from "react-i18next";
@@ -44,7 +50,6 @@ const ChatPageHeader = observer(function ChatPageHeader({
 
   useEffect(() => {
     setTimeout(() => {
-      console.log(inputRef.current);
       inputRef.current?.focus();
     }, 1000);
     function handleWindowResize(e: UIEvent) {
@@ -274,7 +279,13 @@ const ChatPageHeader = observer(function ChatPageHeader({
             <div
               className="clickable_header"
               onClick={() => {
-                setIsUserInfo(true);
+                if (userPredicate(context.chat)) {
+                  context.setIsUserInfo(true);
+                  context.setIsGroupInfo(false);
+                } else {
+                  context.setIsGroupInfo(true);
+                  context.setIsUserInfo(false);
+                }
                 context.setIsSearchMessages(false);
               }}
             >
@@ -284,11 +295,9 @@ const ChatPageHeader = observer(function ChatPageHeader({
                     url={chat.avatar}
                     name={chat.name}
                     color={chat.randomColor}
+                    userId={userPredicate(chat) ? chat.userId : chat.chatId}
                   />
                 </div>
-                {userPredicate(chat) && chat.lastSeen === 0 && (
-                  <div className="online-point"></div>
-                )}
               </div>
               <div className="chat_page_header_text">
                 <h2 className="chat_page_header_title">
@@ -297,14 +306,9 @@ const ChatPageHeader = observer(function ChatPageHeader({
                     : chat.name}
                 </h2>
                 {!typing.length && chat.name !== "Saved Messages" && (
-                  <div
-                    className={
-                      userPredicate(chat) && chat.lastSeen === 0 ? "online" : ""
-                    }
-                  >
-                    {userPredicate(chat)
-                      ? defineUserStatus(chat.lastSeen)
-                      : `${chat.members.length} ${t("membersInGroup")}`}
+                  <div>
+                    {groupChatPredicate(chat) &&
+                      `${chat.members.length} ${t("membersInGroup")}`}
                   </div>
                 )}
                 {typing.length > 0 && chat.name !== "Saved Messages" && (

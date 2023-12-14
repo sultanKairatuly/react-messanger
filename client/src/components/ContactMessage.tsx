@@ -1,8 +1,10 @@
 import {
   Message,
   SystemMessage,
+  User,
   imageMessagePredicate,
   textMessagePredicate,
+  userPredicate,
 } from "../types";
 import store from "../store/store";
 import $api from "../api";
@@ -10,6 +12,9 @@ import { observer } from "mobx-react";
 import { getTimeFormatted } from "../utils";
 import { socket } from "../socket";
 import UserAvatar from "./UserAvatar";
+import { ChatPageContext } from "./ChatPage";
+import { useContext, useState, useEffect } from "react";
+
 type ContactMessageProps = {
   message: Exclude<Message, SystemMessage>;
   onContextMenu: (
@@ -65,6 +70,22 @@ const ContactMessage = observer(function ContactMessage({
   //   };
   //   video.load();
   // }
+  const context = useContext(ChatPageContext);
+  const [author, setAuthor] = useState<User | null>(null);
+  useEffect(() => {
+    const fetchMessageAuthor = async () => {
+      const response = await $api(`/author/${e.author}`);
+      if (userPredicate(response.data)) {
+        setAuthor(response.data);
+      }
+    };
+    fetchMessageAuthor();
+  }, [author]);
+  function openUserInfo(author: User) {
+    context.setIsUserInfo(true);
+    context.setIsGroupInfo(false);
+    context.setActiveUserInfo(author);
+  }
   return (
     <div
       data-id={e.id}
@@ -114,8 +135,16 @@ const ContactMessage = observer(function ContactMessage({
           <div className="message_author_avatar_wrapper"></div>
         )}
         {isAvatar && e.author.userId !== store.user?.userId && (
-          <div className="message_author_avatar_wrapper">
-            <UserAvatar color={e.author.randomColor} name={e.author.name} />
+          <div
+            className="message_author_avatar_wrapper"
+            onClick={() => openUserInfo(e.author)}
+          >
+            <UserAvatar
+              url={e.author.avatar}
+              userId={e.author.userId}
+              color={e.author.randomColor}
+              name={e.author.name}
+            />
           </div>
         )}
         <div

@@ -60,13 +60,13 @@ function Signin() {
         const { message } = data;
         switch (message) {
           case "Not authorized":
-            showErrorMessage("Email is not authorized", setLoginErrorMessage);
+            showErrorMessage(t("emailNotAuthError"), setLoginErrorMessage);
             break;
           case "Credential mismatch":
-            showErrorMessage("Credentials mismatch", setLoginErrorMessage);
+            showErrorMessage(t("credentialsError"), setLoginErrorMessage);
             break;
           default:
-            showErrorMessage("Unexpected error", setLoginErrorMessage);
+            showErrorMessage(t("unexpectedError"), setLoginErrorMessage);
         }
       }
     }

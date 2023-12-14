@@ -101,7 +101,6 @@ const ChatWallpaper = observer(() => {
           val: imageUrl,
           prevUser: store.user || {},
         });
-        console.log(updatedUser);
         store.setUser(updatedUser.data);
       }
     } catch (e) {

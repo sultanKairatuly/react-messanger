@@ -10,6 +10,7 @@ type GrayMenuProps = {
   y?: "top" | "bottom";
   position?: { x: number; y: number };
   animationFrom?: string;
+  transform?: boolean;
 };
 function GrayMenu({
   items,
@@ -17,6 +18,7 @@ function GrayMenu({
   isMenu,
   x = "left",
   y = "top",
+  transform = false,
   position = { x: 0, y: 0 },
   animationFrom: transformOrigin = "top left",
 }: GrayMenuProps) {
@@ -26,6 +28,7 @@ function GrayMenu({
         [y]: `${position.y}px`,
         [x]: `${position.x}px`,
         transformOrigin,
+        transform: transform ? "translateX(-50%)" : "",
       }}
       className={
         (isMenu ? "gray_menu-active" : "gray_menu-inactive") + " gray_menu"

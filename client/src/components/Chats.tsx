@@ -36,7 +36,6 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
   const [messages, setMessages] = useState<Record<string, Message[]>>(
     JSON.parse(localStorage.getItem("chatMessages") as string) || {}
   );
-
   useEffect(() => {
     function handleWindowResize(e: UIEvent) {
       if (
@@ -48,22 +47,20 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
       }
     }
     window.addEventListener("resize", handleWindowResize);
-
-    return () => {
-      window.removeEventListener("resize", handleWindowResize);
-    };
-  }, []);
-  useEffect(() => {
     socket.on("update-messages", ({ data, id }) => {
       setMessages((m) => ({ ...m, [id]: data }));
       localStorage.setItem("chatMessages", JSON.stringify(messages));
     });
+    return () => {
+      window.removeEventListener("resize", handleWindowResize);
+      socket.off("update-messages");
+    };
+  }, []);
 
+  useEffect(() => {
     const fetchMessages = async () => {
       try {
-        if (!Object.keys(messages).length) {
-          setLoading(true);
-        }
+        setLoading(true);
 
         const response = await $api<Message[][]>(
           `/get-all-messages?messageIds=${JSON.stringify(messageIds)}`
@@ -89,14 +86,13 @@ const Chats = observer(function Chats({ chats }: ChatsProps) {
         setLoading(false);
       }
     };
-    if (chats.length) {
+    if (!Object.keys(messages).length) {
       fetchMessages();
     }
-  }, [chats]);
+  }, [chats, messages]);
   return (
     <div>
       {loading && <HiddenLoader />}
-      {!messageIds && <HiddenLoader />}
       {chats.map((c) => (
         <div
           key={c.id}

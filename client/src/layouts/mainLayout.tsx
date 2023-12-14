@@ -19,11 +19,9 @@ const MainLayout = observer(function MainLayout() {
   useEffect(() => {
     if (store.user) {
       socket.emit("connectToUserId", store.user.userId);
-      socket.emit("connectToGroups", store.user.chats);
+      socket.emit("joinChats", store.user.chats);
     }
-
     socket.on("update-user", (data) => {
-      console.log("USER DATA: ", data);
       if (userPredicate(data)) {
         store.setUser(data);
       }
@@ -49,18 +47,15 @@ const MainLayout = observer(function MainLayout() {
   useEffect(() => {
     if (windowWidth < 500) {
       setSidebarContainerWidth(100);
-      console.log(store.isSidebar);
-      console.log("===================");
     }
   }, [windowWidth]);
 
   useEffect(() => {
-    function handleResizeMouseMove(
-      e: React.MouseEvent<HTMLDivElement, MouseEvent>
-    ) {
+    function handleResizeMouseMove(e: MouseEvent) {
       if (resizing && container.current != null) {
         requestAnimationFrame(() => {
           setSidebarContainerWidth(e.clientX);
+          console.log(sidebarContainerWidth);
         });
       }
     }
@@ -69,12 +64,10 @@ const MainLayout = observer(function MainLayout() {
       setResizing(() => false);
     }
 
-    //! КОСТЫЛЬ !!! ИСПРАВИТЬ КОГДА НЕ БУДЕТ ЛЕНЬ
-
-    window.addEventListener("mousemove", () => handleResizeMouseMove);
+    window.addEventListener("mousemove", handleResizeMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener("mousemove", () => handleResizeMouseMove);
+      window.removeEventListener("mousemove", handleResizeMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [resizing, sidebarContainerWidth, container]);
@@ -97,14 +90,17 @@ const MainLayout = observer(function MainLayout() {
               ? `${sidebarContainerWidth}${windowWidth < 500 ? "%" : "px"}`
               : "0px",
             minWidth: store.isSidebar ? `250px` : "0px",
-            maxWidth: windowWidth < 500 ? "1000px" : "400px",
+            maxWidth: windowWidth < 500 ? "1000px" : "700px",
           }}
           ref={container}
         >
           <Sidebar />
           <div
             className="resize_col"
-            onMouseDown={() => setResizing(() => true)}
+            onMouseDown={() => {
+              console.log("Resizing!!");
+              setResizing(() => true);
+            }}
           ></div>
         </div>
         {windowWidth < 500 ? (

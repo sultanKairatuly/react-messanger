@@ -26,16 +26,18 @@ type GroupMessageProp = {
 const isAvatar = (
   e: Exclude<Message, SystemMessage>,
   messages: Exclude<Message, SystemMessage>[]
-) =>
-  (messages[messages.findIndex((m) => m.id === e.id) - 1]?.author?.userId ===
-    e.author.userId &&
-    (messages[messages.findIndex((m) => m.id === e.id) + 1]?.author?.userId !==
-      e.author.userId ||
-      !messages[messages.findIndex((m) => m.id === e.id) + 1])) ||
-  hasDifference(
-    messages[messages.findIndex((m) => m.id === e.id) + 1],
-    messages[messages.findIndex((m) => m.id === e.id)]
-  );
+) => {
+  const prevMessage =
+    messages[messages.findIndex((m) => m.id === e.id) - 1]?.author?.userId ===
+    e.author.userId;
+  const nextMessage =
+    messages[messages.findIndex((m) => m.id === e.id) + 1]?.author?.userId ===
+    e.author.userId;
+
+  if (!prevMessage && !nextMessage) return true;
+  if (!prevMessage && nextMessage) return true;
+  if (prevMessage && nextMessage) return false;
+};
 
 const isName = (
   e: Exclude<Message, SystemMessage>,

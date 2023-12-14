@@ -8,19 +8,6 @@ import SidebarBurgerMenu from "./SidebarBurgerMenu";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-// type DropdownItemDefault = {
-//   type: "default";
-//   title: string;
-//   icon: string;
-//   action: (...args: never) => unknown;
-//   id: string;
-// };
-
-// type DropdownItemCheckbox = Omit<DropdownItemDefault, "type"> & {
-//   type: "checkbox";
-//   checked: boolean;
-// };
-// type DropdownItem = DropdownItemDefault | DropdownItemCheckbox;
 type SidebarHeaderProps = {
   setSidebarSearch: Dispatch<SetStateAction<boolean>>;
   sidebarSearch: boolean;
@@ -37,6 +24,18 @@ const SidebarHeader = observer(function SidebarHeader({
   const { t } = useTranslation();
   const navigate = useNavigate();
   useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      const target = e.target;
+      if (
+        target &&
+        target instanceof HTMLElement &&
+        !target.closest(".sidebar_header_dropdown_menu") &&
+        !target.closest(".sidebar_header_menu")
+      ) {
+        setDropdownMenu(false);
+      }
+    }
+
     function cleanup() {
       document.removeEventListener("click", onClickOutside);
     }
@@ -84,19 +83,6 @@ const SidebarHeader = observer(function SidebarHeader({
     ? "sidebar_header_search_icon-active"
     : "";
 
-  function onClickOutside(e: MouseEvent) {
-    const target = e.target;
-    if (
-      target &&
-      target instanceof HTMLElement &&
-      !target.closest(".sidebar_header_dropdown_menu") &&
-      !target.closest(".sidebar_header_menu") &&
-      target.closest(".side_header_menu_back")
-    ) {
-      setDropdownMenu(false);
-    }
-  }
-
   function handleSearchMouseDown() {
     setActiveInput(true);
     setSidebarSearch(true);
@@ -123,7 +109,6 @@ const SidebarHeader = observer(function SidebarHeader({
         }
         onClick={() => {
           const close = document.querySelector(".side_header_menu_back");
-          console.log(close);
           if (!close) {
             setDropdownMenu(!dropdownMenu);
           } else {

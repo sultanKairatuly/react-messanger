@@ -1,6 +1,6 @@
-import { Chat } from "../types";
+import { Chat, userPredicate } from "../types";
 import "../styles/chatItem.css";
-import UserAvatar from './UserAvatar'
+import UserAvatar from "./UserAvatar";
 
 type ChatItemProps = {
   chat: Chat;
@@ -19,7 +19,12 @@ function ChatItem({
   return (
     <div className="chat_item_container" onClick={onClick}>
       <div className="chat_item_avatar_wrapper">
-        <UserAvatar color={chat.randomColor} name={chat.name}  url={chat.avatar} />
+        <UserAvatar
+          color={chat.randomColor}
+          name={chat.name}
+          userId={userPredicate(chat) ? chat.userId : chat.chatId}
+          url={chat.avatar}
+        />
       </div>
       <div className="chat_item_text">
         <div className="chat_item_title">

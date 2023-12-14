@@ -76,7 +76,6 @@ const ChatPageMessage = observer(function ({
             messages.length === 0 ? 1 : Math.ceil(messages.length / 25);
           const newPage = Math.ceil((i + 25) / 25) + 1;
           if (newPage > page) {
-            console.log("fetch more");
             fetchMoreMessages(newPage);
           }
         }
@@ -89,7 +88,7 @@ const ChatPageMessage = observer(function ({
     return () => {
       document.removeEventListener("click", onClickOutside);
     };
-  }, []);
+  }, [i, enableScroll, messages, setContextMenu, fetchMoreMessages]);
   const observers = useRef<IntersectionObserver[]>([]);
   const handleMessageClick = useCallback(
     (message: Message) => {
@@ -121,7 +120,7 @@ const ChatPageMessage = observer(function ({
         setContextMenu(e.id);
       }
     },
-    []
+    [disableScroll, setContexPosition, setContextMenu]
   );
   const messagesWithoutSystem = useMemo<
     Exclude<Message, SystemMessage>[]

@@ -48,6 +48,7 @@
     text-overflow: ellipsis;
     text-align: left;
     display: block;
+    margin-right: 10px;
 }
 
 .chat_item_icon {

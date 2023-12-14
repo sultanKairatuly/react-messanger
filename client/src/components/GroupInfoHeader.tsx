@@ -4,10 +4,10 @@ import { Dispatch, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 
 type UserInfoHeaderProps = {
-  setIsUserInfo: Dispatch<SetStateAction<boolean>>;
+  setIsGroupInfo: Dispatch<SetStateAction<boolean>>;
 };
 const UserInfoHeader = observer(function ({
-  setIsUserInfo,
+  setIsGroupInfo,
 }: UserInfoHeaderProps) {
   const { t } = useTranslation();
 
@@ -15,7 +15,7 @@ const UserInfoHeader = observer(function ({
     <div className="user_info_header">
       <button
         className="user_info_header_close"
-        onClick={() => setIsUserInfo(false)}
+        onClick={() => setIsGroupInfo(false)}
       >
         <i className="fa-solid fa-xmark"></i>
       </button>

@@ -16,6 +16,7 @@ import {
   imageMessagePredicate,
   replyMessagePredicate,
   ReplyMessage,
+  groupChatPredicate,
 } from "../types";
 import { observer } from "mobx-react";
 import $api from "../api";
@@ -160,7 +161,6 @@ const ChatPageMessages = observer(function ChatPageMessages({
           icon: "fa-solid fa-reply",
           id: uuidv4(),
           action(message) {
-            console.log("Replying message: ", message);
             if (
               textMessagePredicate(message) ||
               imageMessagePredicate(message)
@@ -234,28 +234,20 @@ const ChatPageMessages = observer(function ChatPageMessages({
                 ? "context_menu_wrapper_active"
                 : "") + " context_menu_wrapper"
             }
-            style={{
-              top: contextPosition.y,
-              transform: `translateX(${contextPosition.x - 300}px)`,
-            }}
           >
             <GrayMenu
               isMenu={contextMenu === message.id}
               message={message}
               items={[...commonContextMenuItems, ...personalContextMenuItems]}
+              transform={true}
             />
           </div>
         );
       } else {
         return (
-          <div
-            className={"context_menu_wrapper"}
-            style={{
-              top: contextPosition.y,
-              transform: `translateX(${contextPosition.x - 300}px)`,
-            }}
-          >
+          <div className={"context_menu_wrapper"}>
             <GrayMenu
+              transform={true}
               isMenu={contextMenu === message.id}
               message={message}
               items={commonContextMenuItems}
@@ -268,12 +260,23 @@ const ChatPageMessages = observer(function ChatPageMessages({
   );
   useEffect(() => {
     socket.on("update-messages", async ({ data, id }) => {
+      let isBanned = false;
+      if (groupChatPredicate(chat)) {
+        const member = chat.members.find(
+          (m) => m.userId === store.user?.userId
+        );
+        if (member && member.banned.value) {
+          isBanned = true;
+        }
+      }
       const equal =
         JSON.stringify(messages).split("").sort().join() ===
         JSON.stringify(data).split("").sort().join();
-      if (data && to === id && !equal) {
+      if (data && to === id && !equal && !isBanned) {
         setMessages(data);
         localStorage.setItem(to, JSON.stringify(data));
+      } else {
+        console.log("You do get no message");
       }
     });
 
@@ -325,11 +328,6 @@ const ChatPageMessages = observer(function ChatPageMessages({
     };
     document.addEventListener("click", onClickOutside);
     window.addEventListener("resize", handleWindowResize);
-
-    const objDiv = document.querySelector(".chat_page_messages")!;
-    objDiv.scrollTo({
-      top: objDiv.scrollHeight,
-    });
     return () => {
       socket.off("update-messages");
       window.removeEventListener("resize", handleWindowResize);
@@ -350,7 +348,6 @@ const ChatPageMessages = observer(function ChatPageMessages({
   const fetchMoreMessages = async (newPage: number) => {
     const { data } = await $api(`/messages?chatId=${to}&page=${newPage}`);
     setMessages(data);
-    console.log(data);
   };
   return (
     <>
@@ -414,7 +411,6 @@ const ChatPageMessages = observer(function ChatPageMessages({
                         enableScroll={enableScroll}
                         disableScroll={disableScroll}
                         to={to}
-                        messages={messages}
                         chatId={chatId || ""}
                         setSelectedMessages={setSelectedMessages}
                         isSelectedMessages={isSelectedMessages}

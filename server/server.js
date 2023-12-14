@@ -1,7 +1,8 @@
 import http from "node:http";
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { Server } from "socket.io";
-import webpush from "web-push";
+import fs from "fs/promises";
+import path from "path";
 
 const uri =
   "mongodb+srv://sultanbekkajratuly:d17i4hg4@cluster0.t0mwif5.mongodb.net/?retryWrites=true&w=majority";
@@ -178,7 +179,7 @@ registerRoute("POST", "/read-message", async (req, res) => {
 
 registerRoute("POST", "/registration", async (req, res) => {
   try {
-    const { user } = req.body;
+    const { user, avatar } = req.body;
     if (userPredicate(user)) {
       const candidate = await userCollection.findOne({ email: user.email });
       if (candidate) {
@@ -209,13 +210,32 @@ registerRoute("POST", "/registration", async (req, res) => {
           randomColor: "rgb(30,144,255)",
         };
         const promiseThree = chatCollection.insertOne(savedChats);
-        await Promise.all([promiseOne, promiseThree, promiseTwo]);
+        await Promise.all([
+          promiseOne,
+          promiseThree,
+          promiseTwo,
+          fs.writeFile(
+            `./avatars/${user.userId}.jpg`,
+            avatar.replace("data:image/jpeg;base64,", ""),
+            "base64"
+          ),
+        ]);
         return JSON.stringify(user);
       }
     } else {
       res.statusCode = 405;
       res.statusMessage = "Bad request!";
     }
+  } catch (e) {
+    console.log("An error occured: ", e);
+  }
+});
+
+registerRoute("GET", "/user-avatar", async (req) => {
+  try {
+    const { userId } = req.query;
+    const data = await fs.readFile(`./avatars/${userId}.jpg`);
+    return "data:image/jpeg;base64," + data.toString("base64");
   } catch (e) {
     console.log("An error occured: ", e);
   }
@@ -231,7 +251,7 @@ registerRoute("GET", "/get-members", async (req) => {
   }
 
   const users = await Promise.all(userPromises);
-  return users.map((user, idx) => ({ ...user, role: membersId[idx].role }));
+  return users.map((user, idx) => ({ ...user, ...membersId[idx] }));
 });
 
 registerRoute("GET", "/get-all-messages", async (req, res) => {
@@ -311,6 +331,83 @@ registerRoute("POST", "/create-messages", async (req, res) => {
   }
 });
 
+async function unbanWasted() {
+  const chats = await chatCollection.find({}).toArray();
+}
+
+registerRoute("POST", "/take-admin", async (req) => {
+  const { from, chatId } = req.query;
+  await chatCollection.updateOne(
+    { chatId },
+    { $set: { "members.$[x].role": "member" } },
+    { arrayFilters: [{ "x.userId": from }] }
+  );
+  const updatedChat = await chatCollection.findOne({ chatId });
+  console.log("CHAAAAAAAAAAT", chatId);
+  io.to(chatId).emit("update-chat", updatedChat);
+});
+
+registerRoute("POST", "/give-admin", async (req) => {
+  const { to, chatId } = req.query;
+  await chatCollection.updateOne(
+    { chatId },
+    { $set: { "members.$[x].role": "admin" } },
+    { arrayFilters: [{ "x.userId": to }] }
+  );
+  const updatedChat = await chatCollection.findOne({ chatId });
+  console.log("CHAAAAAAAAAAT", chatId);
+  io.to(chatId).emit("update-chat", updatedChat);
+});
+
+registerRoute("POST", "/ban-user", async (req) => {
+  const { userId, chatId, time } = req.query;
+  const date = new Date(Date.now() + time * 1000 * 60 * 60 * 60 * 24);
+  await chatCollection.updateOne(
+    { chatId },
+    { $set: { "members.$[x].banned": { value: true, time: date } } },
+    { arrayFilters: [{ "x.userId": userId }] }
+  );
+  const updatedChat = await chatCollection.findOne({ chatId });
+  console.log("CHAAAAAAAAAAT", chatId);
+  io.to(chatId).emit("update-chat", updatedChat);
+});
+
+registerRoute("POST", "/unban-user", async (req) => {
+  const { userId, chatId } = req.query;
+  await chatCollection.updateOne(
+    { chatId },
+    { $set: { "members.$[x].banned": { value: false, time: null } } },
+    { arrayFilters: [{ "x.userId": userId }] }
+  );
+  const updatedChat = await chatCollection.findOne({ chatId });
+  console.log("CHAAAAAAAAAAT", chatId);
+  io.to(chatId).emit("update-chat", updatedChat);
+});
+
+registerRoute("POST", "/mute-user-group", async (req) => {
+  const { userId, chatId, time } = req.query;
+  const date = new Date(Date.now() + time * 1000 * 60 * 60 * 60 * 24);
+  await chatCollection.updateOne(
+    { chatId },
+    { $set: { "members.$[x].muted": { value: true, time: date } } },
+    { arrayFilters: [{ "x.userId": userId }] }
+  );
+  const updatedChat = await chatCollection.findOne({ chatId });
+  console.log("CHAAAAAAAAAAT", chatId);
+  io.to(chatId).emit("update-chat", updatedChat);
+});
+
+registerRoute("POST", "/unmute-user-group", async (req) => {
+  const { userId, chatId } = req.query;
+  await chatCollection.updateOne(
+    { chatId },
+    { $set: { "members.$[x].muted": { value: false, time: null } } },
+    { arrayFilters: [{ "x.userId": userId }] }
+  );
+  const updatedChat = await chatCollection.findOne({ chatId });
+  io.to(chatId).emit("update-chat", updatedChat);
+});
+
 registerRoute("GET", "/messages", async (req, res) => {
   const { chatId, page } = req.query;
   const response = await client
@@ -318,8 +415,15 @@ registerRoute("GET", "/messages", async (req, res) => {
     .collection(chatId)
     .find({})
     .toArray();
-  response.sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
-  return response.slice(0, page * 25);
+  response.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+  console.log(response.slice(0, page * 25).reverse());
+  console.log("=====================");
+  // return response
+  //   .reverse()
+  //   .slice(0, page * 25)
+  //   .reverse();
+  return response
+
 });
 
 registerRoute("POST", "/update-user-wallpapers", async (req, res) => {
@@ -374,8 +478,13 @@ registerRoute("GET", "/find-groups", async (req) => {
 
 registerRoute("POST", "/create-group", async (req) => {
   try {
-    const { group } = req.body;
+    const { group, avatar, creator } = req.body;
     await client.db("messages").createCollection(group.chatId);
+    await fs.writeFile(
+      `./avatars/${group.chatId}.jpg`,
+      avatar.replace("data:image/jpeg;base64,", ""),
+      "base64"
+    );
     await chatCollection.insertOne(group);
     const a = await chatCollection.findOne({ chatId: group.chatId });
     return a;
@@ -394,69 +503,73 @@ registerRoute("POST", "/leave-group", async (req) => {
 });
 
 registerRoute("POST", "/send-message", async (req) => {
-  const { to, user1, user2, message, type, socketId } = req.body;
-  if (type === "group") {
-    await client
-      .db("messages")
-      .collection(to)
-      .insertOne({ ...message, status: "received" });
-    const updatedOne = await client
-      .db("messages")
-      .collection(to)
-      .find({})
-      .toArray();
-    io.to(to).emit("update-messages", { data: updatedOne, id: to });
-    const chat = await chatCollection.findOne({ chatId: to });
-    const socket = io.sockets.sockets.get(socketId);
-    socket.broadcast
-      .to(to)
-      .emit("notify", { chat, text: `${user1}: ${message.text}` });
-  } else {
-    await client
-      .db("messages")
-      .collection(to)
-      .insertOne({ ...message, status: "received" });
-    const messages = await client
-      .db("messages")
-      .collection(to)
-      .find({})
-      .toArray();
-    const chat = await userCollection.findOne({ userId: user1 });
-    const notifyText = message.type === "image" ? "Photo" : message.text;
-    if (!message.author.chats.includes(user2)) {
-      await Promise.all([
-        userCollection.updateOne(
-          { userId: user2 },
-          { $push: { chats: user1 } }
-        ),
-        userCollection.updateOne(
-          { userId: user1 },
-          { $push: { chats: user2 } }
-        ),
-      ]);
-      const updatedOnePromise = userCollection.findOne({ userId: user1 });
-      const updatedTwoPromise = userCollection.findOne({ userId: user2 });
-      const [updatedOne, updatedTwo] = await Promise.all([
-        updatedOnePromise,
-        updatedTwoPromise,
-      ]);
-      updatedOne.chats = [...new Set(updatedOne.chats)];
-      updatedTwo.chats = [...new Set(updatedTwo.chats)];
-      io.to(user1).emit("update-user", updatedOne);
-      io.to(user2).emit("update-user", updatedTwo);
-      io.to(user1)
-        .to(user2)
-        .emit("update-messages", { data: messages, id: to });
-      io.to(user2).emit("notify", { chat, text: notifyText });
+  try {
+    const { to, user1, user2, message, type, socketId } = req.body;
+    if (type === "group") {
+      await client
+        .db("messages")
+        .collection(to)
+        .insertOne({ ...message, status: "received" });
+      const updatedOne = await client
+        .db("messages")
+        .collection(to)
+        .find({})
+        .toArray();
+      io.to(to).emit("update-messages", { data: updatedOne, id: to });
+      const chat = await chatCollection.findOne({ chatId: to });
+      const socket = io.sockets.sockets.get(socketId);
+      socket.broadcast
+        .to(to)
+        .emit("notify", { chat, text: `${user1}: ${message.text}` });
     } else {
-      io.to(user1)
-        .to(user2)
-        .emit("update-messages", { data: messages, id: to });
-      io.to(user2).emit("notify", { chat, text: notifyText });
+      await client
+        .db("messages")
+        .collection(to)
+        .insertOne({ ...message, status: "received" });
+      const messages = await client
+        .db("messages")
+        .collection(to)
+        .find({})
+        .toArray();
+      const chat = await userCollection.findOne({ userId: user1 });
+      const notifyText = message.type === "image" ? "Photo" : message.text;
+      if (!message.author.chats.includes(user2)) {
+        await Promise.all([
+          userCollection.updateOne(
+            { userId: user2 },
+            { $push: { chats: user1 } }
+          ),
+          userCollection.updateOne(
+            { userId: user1 },
+            { $push: { chats: user2 } }
+          ),
+        ]);
+        const updatedOnePromise = userCollection.findOne({ userId: user1 });
+        const updatedTwoPromise = userCollection.findOne({ userId: user2 });
+        const [updatedOne, updatedTwo] = await Promise.all([
+          updatedOnePromise,
+          updatedTwoPromise,
+        ]);
+        updatedOne.chats = [...new Set(updatedOne.chats)];
+        updatedTwo.chats = [...new Set(updatedTwo.chats)];
+        io.to(user1).emit("update-user", updatedOne);
+        io.to(user2).emit("update-user", updatedTwo);
+        io.to(user1)
+          .to(user2)
+          .emit("update-messages", { data: messages, id: to });
+        io.to(user2).emit("notify", { chat, text: notifyText });
+      } else {
+        io.to(user1)
+          .to(user2)
+          .emit("update-messages", { data: messages, id: to });
+        io.to(user2).emit("notify", { chat, text: notifyText });
+      }
     }
+  } catch (e) {
+    console.log(e);
+  } finally {
+    return "";
   }
-
-  return "";
 });
 
 registerRoute("POST", "/typing", async (req) => {
@@ -538,12 +651,17 @@ registerRoute("POST", "/update-user-profile", async (req, res) => {
         $set: {
           name: userName,
           bio,
-          avatar: userAvatar,
+          avatar: "",
           userId: user.userId,
         },
       }
     );
-    const updatedUser = await userCollection.findOne({ email: user.email });
+    await fs.writeFile(
+      `./avatars/${user.userId}.jpg`,
+      userAvatar.replace("data:image/jpeg;base64,", ""),
+      "base64"
+    );
+    const updatedUser = await userCollection.findOne({ userId: user.userId });
     return updatedUser;
   } catch (e) {
     console.log("An error occured: ");
@@ -640,45 +758,65 @@ io.on("connection", (socket) => {
       });
     }
   });
-  socket.on("joinGroup", async ({ chat: { chatId, members }, joiner }) => {
-    socket.join(chatId);
-    const systemMessage = {
-      text: `${joiner.name} joined group`,
-      id: Math.random() * 10000 * 12123,
-      createdAt: Date.now(),
-      type: "system",
-    };
-    console.log("Jointer User Id: ", joiner.userId);
-    await userCollection.updateOne(
-      { userId: joiner.userId },
-      { $push: { chats: chatId } }
-    );
-    if (!members.find((m) => m.userId === joiner.userId)) {
-      await chatCollection.updateOne(
-        { chatId },
-        { $push: { members: { role: "member", userId: joiner.userId } } }
-      );
-    }
-    await client.db("messages").collection(chatId).insertOne(systemMessage);
-    const messagesPromise = client
-      .db("messages")
-      .collection(chatId)
-      .find({})
-      .toArray();
-    const userPromise = userCollection.findOne({ userId: joiner.userId });
-    const chatPromise = chatCollection.findOne({ chatId });
-    const [messages, chat, user] = await Promise.all([
-      messagesPromise,
-      chatPromise,
-      userPromise,
-    ]);
 
-    io.to(chatId).emit("update-messages", {
-      data: messages,
-      id: chatId,
+  socket.on("joinChats", (chats) => {
+    chats.forEach((c) => {
+      socket.join(c);
+      console.log("Joining to : ", c);
     });
-    io.to(joiner.userId).emit("update-chat", chat);
   });
+
+  socket.on(
+    "joinGroup",
+    async ({ chat: { chatId, members }, joiner, role }) => {
+      socket.join(chatId);
+      console.log("joined to ", joiner.name);
+      const systemMessage = {
+        text: `${joiner.name} joined group`,
+        id: Math.random() * 10000 * 12123,
+        createdAt: Date.now(),
+        type: "system",
+      };
+      await userCollection.updateOne(
+        { userId: joiner.userId },
+        { $push: { chats: chatId } }
+      );
+      if (!members.find((m) => m.userId === joiner.userId)) {
+        await chatCollection.updateOne(
+          { chatId },
+          {
+            $push: {
+              members: {
+                role,
+                userId: joiner.userId,
+                banned: { value: false, time: null },
+                muted: { value: false, time: null },
+              },
+            },
+          }
+        );
+      }
+      await client.db("messages").collection(chatId).insertOne(systemMessage);
+      const messagesPromise = client
+        .db("messages")
+        .collection(chatId)
+        .find({})
+        .toArray();
+      const userPromise = userCollection.findOne({ userId: joiner.userId });
+      const chatPromise = chatCollection.findOne({ chatId });
+      const [messages, chat, user] = await Promise.all([
+        messagesPromise,
+        chatPromise,
+        userPromise,
+      ]);
+
+      io.to(chatId).emit("update-messages", {
+        data: messages,
+        id: chatId,
+      });
+      io.to(joiner.userId).emit("update-chat", chat);
+    }
+  );
 });
 server.listen(PORT || 5000, () => {
   console.log(`Server is listening on port ${PORT || 5000}`);

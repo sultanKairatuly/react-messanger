@@ -27,7 +27,6 @@ const Sidebar = observer(function () {
       setChats(ans.map((e) => e.data));
     };
     userChats();
-    console.log("chattimng...");
   }, [store.user?.chats]);
 
   return (

@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import $api from "../api";
 import store from "../store/store";
 import UserAvatar from "./UserAvatar";
-import { convertBaseToBlob, getRandomColor } from "../utils";
+import { getRandomColor } from "../utils";
 import { useTranslation } from "react-i18next";
 
 function SignupCustomization() {
@@ -52,7 +52,7 @@ function SignupCustomization() {
           email,
           name: username,
           type: "contact",
-          avatar,
+          avatar: "",
           id: uuidv4(),
           chats: [],
           userId: id,
@@ -77,9 +77,9 @@ function SignupCustomization() {
           activeChatWallpaper: "chat_bg0.jpeg",
         };
         try {
-          console.log("user: ", newUser);
           const response = await $api.post<string>("/registration", {
             user: newUser,
+            avatar,
           });
           const parsedUser = JSON.parse(response.data);
           if (userPredicate(parsedUser)) {
@@ -105,13 +105,8 @@ function SignupCustomization() {
       if (inputFile.files) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const src = convertBaseToBlob(
-            e.target?.result
-              ?.toString()
-              .replace("data:image/jpeg;base64,", "") || ""
-          );
-          setAvatar(URL.createObjectURL(src));
-          console.log(URL.createObjectURL(src));
+          const src = e.target?.result?.toString();
+          src && setAvatar(src);
         };
         reader.readAsDataURL(inputFile.files[0]);
       }

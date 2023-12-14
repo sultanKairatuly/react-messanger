@@ -26,8 +26,16 @@ export type EmittingData = {
 };
 export type Role = "admin" | "member";
 export type Member = {
-  role: Role,
-  userId: string
+  role: Role;
+  userId: string,
+  banned: {
+    value: boolean,
+    time: Date | null
+  },
+  muted: {
+    value: boolean,
+    time: Date | null
+  }
 }
 export type GroupChat = {
     type: 'group',

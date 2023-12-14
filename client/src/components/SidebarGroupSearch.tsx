@@ -20,7 +20,6 @@ function SidebarGroupSearch() {
       const { data: groups } = await $api.get<GroupChat[]>(
         `/find-groups?query=${searchQuery}`
       );
-      console.log(groups);
       if (groups.every(groupChatPredicate)) {
         setGroups(groups);
       }

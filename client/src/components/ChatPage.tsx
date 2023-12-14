@@ -23,6 +23,8 @@ import {
   TextMessage,
   ReplyMessage,
   MessageQuery,
+  User,
+  userPredicate,
 } from "../types";
 
 import { v4 as uuidv4 } from "uuid";
@@ -52,6 +54,9 @@ type ChatPageContextType = {
   chat: Chat;
   searchingPattern: string;
   setSearchingPattern: Dispatch<SetStateAction<string>>;
+  setIsUserInfo: Dispatch<SetStateAction<boolean>>;
+  setIsGroupInfo: Dispatch<SetStateAction<boolean>>;
+  setActiveUserInfo: Dispatch<SetStateAction<User | null>>;
 };
 export const ChatPageContext = createContext({} as ChatPageContextType);
 const ChatPage = observer(function ChatPage() {
@@ -92,6 +97,8 @@ const ChatPage = observer(function ChatPage() {
     }
   }, [chatId, chat]);
   const [isUserInfo, setIsUserInfo] = useState(false);
+  const [isGroupInfo, setIsGroupInfo] = useState(false);
+  const [activeUserInfo, setActiveUserInfo] = useState<User | null>(null);
   const onMessageSend = useCallback(
     async (messageDetails: MessageQuery) => {
       const notEmptyWhileTextReply =
@@ -302,12 +309,14 @@ const ChatPage = observer(function ChatPage() {
     }, 500),
     [chatId]
   );
+
   return (
     <>
       {chat ? (
         <ChatPageContext.Provider
           value={{
             setIsForwardMessage,
+            setIsGroupInfo,
             isForwardMessage,
             setActiveMessages,
             activeMessages,
@@ -318,6 +327,8 @@ const ChatPage = observer(function ChatPage() {
             chat,
             searchingPattern,
             setSearchingPattern,
+            setIsUserInfo,
+            setActiveUserInfo,
           }}
         >
           <div
@@ -362,7 +373,9 @@ const ChatPage = observer(function ChatPage() {
                   containerRef={container.current}
                 />
                 {groupChatPredicate(chat) &&
-                  !store.user?.chats.includes(chat.chatId) && (
+                  !chat.members.find(
+                    (member) => member.userId === store.user?.userId
+                  ) && (
                     <button
                       className="join_button"
                       onClick={() => {
@@ -372,8 +385,11 @@ const ChatPage = observer(function ChatPage() {
                             members: chat.members.map((m) => m.userId),
                           },
                           joiner: store.user,
+                          role: "member",
                         });
-                        chatId && store.user?.chats.push(chatId);
+                        chatId &&
+                          !store.user?.chats.includes(chatId) &&
+                          store.user?.chats.push(chatId);
                         localStorage.setItem(
                           "user",
                           JSON.stringify(store.user)
@@ -402,7 +418,9 @@ const ChatPage = observer(function ChatPage() {
                 }
                 {!isSearchMessages ? (
                   groupChatPredicate(chat) ? (
-                    store.user?.chats.includes(chat.chatId) && (
+                    chat.members.find(
+                      (member) => member.userId === store.user?.userId
+                    ) && (
                       <ChatPageFooter
                         setReplyMessage={setReplyMessage}
                         setSelectedMessages={setSelectedMessages}
@@ -441,25 +459,31 @@ const ChatPage = observer(function ChatPage() {
                 ) : null}
               </div>
             </div>
-            {chat.type === "contact" ? (
-              <UserInfo
-                style={{
-                  width: isUserInfo && !isSearchMessages ? "100%" : "0%",
-                }}
-                setIsUserInfo={setIsUserInfo}
-              />
-            ) : (
-              <GroupInfo
-                style={{
-                  width: isUserInfo && !isSearchMessages ? "100%" : "0%",
-                }}
-                setIsUserInfo={setIsUserInfo}
-              />
-            )}
+            <UserInfo
+              style={{
+                width: isUserInfo && !isSearchMessages ? "100%" : "0%",
+              }}
+              setIsUserInfo={setIsUserInfo}
+              chat={
+                activeUserInfo
+                  ? activeUserInfo
+                  : userPredicate(chat)
+                  ? chat
+                  : null
+              }
+            />
+            <GroupInfo
+              style={{
+                width: isGroupInfo && !isSearchMessages ? "100%" : "0%",
+              }}
+              setIsGroupInfo={setIsGroupInfo}
+            />
           </div>
         </ChatPageContext.Provider>
       ) : (
-        <HiddenLoader />
+        <div className="chat_page_container">
+          <HiddenLoader />
+        </div>
       )}
     </>
   );

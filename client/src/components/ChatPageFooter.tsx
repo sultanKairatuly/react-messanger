@@ -7,6 +7,7 @@ import {
   MessageQuery,
   ReplyMessage as ReplyMessageType,
   SystemMessage,
+  groupChatPredicate,
   userPredicate,
 } from "../types";
 
@@ -153,12 +154,22 @@ const ChatPageFooter = observer(function ChatPageFooter({
       },
     ];
   }, [i18n.language]);
-
+  const { chat } = context;
   const isBlocked =
     (store.user && store.user?.blockedContacts.includes(context.chatId)) ||
     (userPredicate(context.chat) &&
       store.user &&
       context.chat.blockedContacts.includes(store.user.userId));
+  const isBanned = groupChatPredicate(chat)
+    ? chat.members.find((m) => m.userId === store.user?.userId)?.banned?.value
+      ? true
+      : false
+    : false;
+  const isMuted = groupChatPredicate(chat)
+    ? chat.members.find((m) => m.userId === store.user?.userId)?.muted?.value
+      ? true
+      : false
+    : false;
   return (
     <>
       <AppModal setModal={setPhotoModal} isModal={isPhotoModal}>
@@ -216,13 +227,27 @@ const ChatPageFooter = observer(function ChatPageFooter({
           <div className="chat_page_footer_content">
             <h1 className="blocked_message">
               {store.user && store.user.blockedContacts.includes(context.chatId)
-                ? "Вы заблокировали этого пользователя"
-                : "Этот пользователь вас заблокировал"}
+                ? t("youBlock")
+                : t("youBlocked")}
             </h1>
           </div>
         </div>
       )}
-      {!isSelectedMessages && !isBlocked && (
+      {isBanned && !isSelectedMessages && (
+        <div className="chat_page_footer">
+          <div className="chat_page_footer_content">
+            <h1 className="blocked_message">{t("youBanned")}</h1>
+          </div>
+        </div>
+      )}
+      {isMuted && !isSelectedMessages && (
+        <div className="chat_page_footer">
+          <div className="chat_page_footer_content">
+            <h1 className="blocked_message">{t("youMuted")}</h1>
+          </div>
+        </div>
+      )}
+      {!isSelectedMessages && !isBlocked && !isBanned && !isMuted && (
         <div className="chat_page_footer">
           <div
             className={

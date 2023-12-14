@@ -1,24 +1,26 @@
 import { observer } from "mobx-react";
 import "../styles/userInfo.css";
 import UserInfoHeader from "./UserInfoHeader";
-import { Dispatch, SetStateAction, useContext, useMemo } from "react";
-import { ChatPageContext } from "./ChatPage";
+import { Dispatch, SetStateAction, useMemo } from "react";
 import UserAvatar from "./UserAvatar";
 import SettingsOptionsList from "./SettingsOptionsList";
 import store from "../store/store";
 import { useTranslation } from "react-i18next";
+import { User } from "../types";
 
 type UserInfo = {
   setIsUserInfo: Dispatch<SetStateAction<boolean>>;
   style: Record<string, unknown>;
+  chat: User | null;
 };
 const UserInfo = observer(function UserInfo({
   setIsUserInfo,
   style,
+  chat,
 }: UserInfo) {
   const { t, i18n } = useTranslation();
-  const { chat } = useContext(ChatPageContext);
   const userInfoOptions = useMemo(() => {
+    if (!chat) return []
     const bioOption = {
       title: chat.bio,
       icon: "fa-solid fa-circle-info",
@@ -56,6 +58,7 @@ const UserInfo = observer(function UserInfo({
       return [bioOption];
     }
   }, [chat, i18n.language]);
+  if (!chat) return null;
   return (
     <div className="user_info_container" style={style}>
       <UserInfoHeader setIsUserInfo={setIsUserInfo} />
@@ -65,6 +68,7 @@ const UserInfo = observer(function UserInfo({
             url={chat.avatar}
             name={chat.name}
             color={chat.randomColor}
+            userId={chat.userId}
           />
         </div>
         <SettingsOptionsList options={userInfoOptions} />

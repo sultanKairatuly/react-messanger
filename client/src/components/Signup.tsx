@@ -53,7 +53,6 @@ function Signup() {
     const candidate = await $api.get(
       `/check-candidate?email=${login}&userId=${id}`
     );
-    console.log(candidate);
     if (login.length === 0) {
       showErrorMessage(t("fieldError"), setLoginErrorMessage);
     } else if (id.length <= 4) {

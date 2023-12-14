@@ -8,8 +8,8 @@ import { GroupChat, SystemMessage, groupChatPredicate } from "../types";
 import $api from "../api";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
-import { socket } from "../socket";
 import { getRandomColor } from "../utils";
+import { socket } from "../socket";
 
 const NewGroup = function NewGroup() {
   const [groupAvatar, setGroupAvatar] = useState("/blue_background.jpg");
@@ -32,20 +32,18 @@ const NewGroup = function NewGroup() {
     });
     inputFile.click();
   }
-
+  let handling = false;
   async function handleNextButttonClick() {
+    if (handling) {
+      return;
+    }
     if (!store.user?.chats?.includes(groupId.current)) {
+      handling = true;
       const group: GroupChat = {
         type: "group",
-        members: [
-          {
-            userId: store.user?.userId || "",
-            role: "admin",
-          },
-        ],
+        members: [],
         name: groupName,
-        avatar:
-          groupAvatar === "/blue_background.jpg" ? "default" : groupAvatar,
+        avatar: groupAvatar === "/blue_background.jpg" ? "default" : "",
         chatId: groupId.current,
         id: uuidv4(),
         bio: groupBio,
@@ -53,34 +51,36 @@ const NewGroup = function NewGroup() {
       };
       const { data: createdGroup } = await $api.post("/create-group", {
         group,
+        avatar:
+          groupAvatar === "/blue_background.jpg" ? "default" : groupAvatar,
         creator: store.user?.userId,
       });
 
       if (groupChatPredicate(createdGroup)) {
-        console.log("Verified!: ", createdGroup);
+        store.user?.chats.push(groupId.current);
         const systemMessage: SystemMessage = {
           text: `${store.user?.name} created group "${groupName}"`,
           id: uuidv4(),
           createdAt: Date.now(),
           type: "system",
         };
+        socket.emit("joinGroup", {
+          joiner: store.user,
+          chat: group,
+          role: "admin",
+        });
         await $api.post(`/send-message`, {
           message: systemMessage,
           to: group.chatId,
           type: "group",
         });
-        socket.emit("joinGroup", {
-          chat: {
-            chatId: group.chatId,
-            members: group.members,
-          },
-          joiner: store.user,
-          userChats: store.user?.chats,
-        });
+
         navigate(`/a/${group.chatId}`);
       }
+      !store.user?.chats.includes(groupId.current) &&
+        store.user?.chats.push(groupId.current);
+      localStorage.setItem("user", JSON.stringify(store.user));
       store.newGroup = false;
-      store.user?.chats.push(groupId.current);
     }
   }
 

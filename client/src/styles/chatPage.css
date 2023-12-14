@@ -157,7 +157,7 @@ br {
     display: flex;
     position: relative;
     margin: 0 auto;
-    align-items: flex-end;
+    align-items: center;
 }
 .chat_page_message_content{
     max-width: 70%;
@@ -194,7 +194,7 @@ br {
 .chat_page_message {
     width: 100%;
     display: flex;
-    padding: 20px 5px;
+    padding: 2px 5px;
     transition: 0.2s ease-in-out;
 }
 
@@ -298,7 +298,8 @@ br {
 .context_menu_wrapper {
     position: absolute;
     z-index: 10;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .context_menu_wrapper_active{

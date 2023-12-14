@@ -2,7 +2,7 @@ import "../styles/editProfile.css";
 import PageHeader from "./PageHeader";
 import store from "../store/store";
 import AppInput from "./AppInput";
-import { useState } from "react";
+import {  useState } from "react";
 import AppButton from "./AppButton";
 import { Dispatch, SetStateAction } from "react";
 import $api from "../api";
@@ -90,7 +90,11 @@ function EditProfile() {
             className="edit_profile_avatar_wrapper"
             onClick={handleAvatarClick}
           >
-            <UserAvatar />
+            {userAvatar ? (
+              <img className="user_avatar" src={userAvatar} alt="user_avatar" />
+            ) : (
+              <UserAvatar />
+            )}
           </div>
 
           <div className="edit_profile_input_wrapper">
